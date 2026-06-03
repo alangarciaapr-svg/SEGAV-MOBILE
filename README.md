@@ -2,9 +2,9 @@
 
 PWA MVP tipo ERP de prevencion y seguridad laboral para Sociedad Maderera Galvez y Di Genova Ltda.
 
-## Estado del repositorio
+## Estado
 
-Version base cargada directamente desde ChatGPT con commits incrementales para evitar bloqueos del conector.
+App base cargada en GitHub y lista para probar localmente. Funciona como MVP con persistencia local del navegador y estructura Supabase inicial para implementar base real.
 
 ## Modulos visibles
 
@@ -22,9 +22,11 @@ Version base cargada directamente desde ChatGPT con commits incrementales para e
 - Documentos SGSST.
 - Comite Paritario.
 
-## Uso local
+## Implementacion rapida
 
 ```bash
+git clone https://github.com/alangarciaapr-svg/SEGAV-MOBILE.git
+cd SEGAV-MOBILE
 npm install
 npm run dev
 ```
@@ -44,16 +46,40 @@ npm run preview
 
 ## Supabase
 
-1. Copiar `.env.example` como `.env`.
-2. Completar:
+1. Crear proyecto Supabase.
+2. Copiar `.env.example` como `.env`.
+3. Completar:
 
 ```bash
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 ```
 
-3. Ejecutar `schema.sql` o el esquema ampliado que se agregue en futuras versiones.
+4. Ejecutar en SQL Editor, en este orden:
+
+```bash
+database/01_base.sql
+database/02_registros_sst.sql
+database/03_control_operacional.sql
+database/04_ley_karin.sql
+database/05_documentos_comite.sql
+```
+
+## Despliegue recomendado
+
+Vercel, Netlify o Cloudflare Pages.
+
+Configuracion:
+
+- Framework: Vite.
+- Build command: `npm run build`.
+- Output directory: `dist`.
+- Variables: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
 
 ## Seguridad
 
-No subir `.env`, claves secretas, `service_role`, contrasenas ni tokens personales al repositorio.
+No subir `.env`, tokens, claves secretas, `service_role` ni contrasenas. Antes de produccion real, restringir Ley Karin con roles y RLS.
+
+## Guia detallada
+
+Ver `docs/IMPLEMENTACION.md`.
