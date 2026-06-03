@@ -19,21 +19,23 @@ const centros = ['Casa matriz / Planta','Faena forestal','Aserradero','Taller','
 const eppBase = ['Zapatos de seguridad','Lentes de seguridad','Guantes cabritilla','Guantes multiflex','Gorro legionario','Casco','Arnes','Cabo de vida','Overol','Traje de agua','Protector facial','Chaleco reflectante','Pantalon anticorte','Mascarillas','Alcohol gel','Chaqueta anticorte','Proteccion auditiva','Fono para casco','Bota forestal'];
 const checklist = ['Agua suficiente','Elementos de higiene','Bano quimico o servicios','Botiquin','Extintores','Comedor','Sistema de comunicacion','Senaletica','Uso de EPP','EPP en buen estado','Analisis de Riesgo Diario','Procedimientos de trabajo seguro','Protecciones de maquinaria','Mantenciones al dia'];
 
-const initial = {
-  trabajadores: trabajadoresSeed,
-  capacitaciones: [],
-  irl: [], riohs: [], epp: [], inspecciones: [], hallazgos: [], accidentes: [], leykarin: [], documentos: [], comite: []
-};
+const initial = { trabajadores: trabajadoresSeed, capacitaciones: [], irl: [], riohs: [], epp: [], inspecciones: [], hallazgos: [], accidentes: [], leykarin: [], documentos: [], comite: [] };
 
 function load(){ try { return JSON.parse(localStorage.getItem('segav-mobile-state')) || initial; } catch { return initial; } }
 function save(data){ localStorage.setItem('segav-mobile-state', JSON.stringify(data)); }
 function resetLocal(){ localStorage.removeItem('segav-mobile-state'); window.location.reload(); }
 function uid(prefix){ return `${prefix}-${Math.random().toString(36).slice(2,8).toUpperCase()}`; }
 function today(){ return new Date().toISOString().slice(0,10); }
+function nowIso(){ return new Date().toISOString(); }
 function safe(value){ return value ? String(value) : 'No registrado'; }
 function formatDate(value){ if(!value) return 'Sin fecha'; const [y,m,d] = String(value).split('-'); return d && m && y ? `${d}-${m}-${y}` : value; }
+function formatDateTime(value){ if(!value) return 'Sin registro'; try { return new Date(value).toLocaleString('es-CL'); } catch { return String(value); } }
 function normalizeWorkerName(value){ return String(value || '').trim().toUpperCase(); }
 function nextWorkerId(workers){ const nums = workers.map(w => Number(String(w.id || '').replace(/\D/g,''))).filter(Boolean); const next = Math.max(0,...nums)+1; return `TR-${String(next).padStart(3,'0')}`; }
+function signatureImage(sig){ if(!sig) return ''; if(typeof sig === 'string') return sig.startsWith('data:image') ? sig : ''; return sig.dataUrl || ''; }
+function signatureTime(sig){ return sig && typeof sig === 'object' ? sig.signedAt : ''; }
+function signatureName(sig){ return sig && typeof sig === 'object' ? sig.signerName : ''; }
+function traceCode(prefix='REG'){ return `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`; }
 
 function Field({label, children}){ return <label className="block"><span className="text-xs font-bold uppercase text-slate-500">{label}</span>{children}</label>; }
 function Input(props){ return <input {...props} className="mt-1 w-full rounded-2xl border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-teal-100"/>; }
@@ -42,65 +44,98 @@ function Select({children,...props}){ return <select {...props} className="mt-1 
 function Card({children,style}){ return <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm" style={style}>{children}</section>; }
 function Btn({children,secondary=false,danger=false,...props}){ const cls = danger ? 'rounded-2xl bg-red-600 px-4 py-2 text-sm font-bold text-white' : secondary ? 'rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-900' : 'rounded-2xl bg-teal-700 px-4 py-2 text-sm font-bold text-white hover:bg-teal-800'; return <button {...props} className={cls}>{children}</button>; }
 
+function pdfHeader(doc, title, subtitle, code){
+  doc.setFillColor(15,118,110); doc.rect(0,0,210,30,'F');
+  doc.setFillColor(20,184,166); doc.roundedRect(14,7,16,16,3,3,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text(title, 36, 14);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.text(subtitle, 36, 22);
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.text(code || 'SIN-CODIGO', 150, 14);
+  doc.setTextColor(15,23,42);
+}
+function pdfFooter(doc, code){
+  const pages = doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){ doc.setPage(i); doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(100,116,139); doc.text(`SEGAV SST GYD · Codigo trazabilidad: ${code}`, 14, 287); doc.text(`Pagina ${i} de ${pages}`, 178, 287); }
+}
+function pdfLabelValue(doc, label, value, x, y, w=82){
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(100,116,139); doc.text(label.toUpperCase(), x, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(15,23,42);
+  const lines = doc.splitTextToSize(safe(value), w); doc.text(lines, x, y+5); return y + 6 + lines.length * 4;
+}
+function ensurePage(doc, y, needed=40, code='') { if(y + needed > 276){ doc.addPage(); pdfHeader(doc,'ACTA DE CAPACITACION SST','Continuacion de registro documental',code); return 42; } return y; }
+
 function generateRecordPdf(title, record){
+  const code = record.trazabilidad || traceCode('REG');
   const doc = new jsPDF({ unit:'mm', format:'a4' });
-  const now = new Date().toLocaleString('es-CL');
-  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.text('SEGAV SST GYD', 14, 16);
-  doc.setFontSize(11); doc.text(title, 14, 24);
-  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.text(empresa.razonSocial, 14, 31); doc.text(`RUT: ${empresa.rut}`, 14, 36); doc.text(`Fecha generacion: ${now}`, 14, 41); doc.line(14, 46, 196, 46);
-  let y = 55;
-  Object.entries(record).filter(([k]) => !['firma','asistentesFirmas'].includes(k)).forEach(([key,value]) => {
-    const finalValue = Array.isArray(value) ? `${value.length} items` : value;
-    const text = doc.splitTextToSize(`${key.toUpperCase()}: ${safe(finalValue)}`, 170);
-    doc.text(text, 14, y); y += text.length * 5 + 2; if(y > 245){ doc.addPage(); y=20; }
-  });
-  if(record.firma && String(record.firma).startsWith('data:image')){ y += 6; doc.text('Firma:', 14, y); y += 4; doc.addImage(record.firma, 'PNG', 14, y, 70, 28); }
-  doc.setFontSize(8); doc.text('Documento generado por SEGAV SST GYD. Registro auditable SGSST DS44.', 14, 287);
-  doc.save(`${title}-${record.id || 'registro'}.pdf`.replace(/[^a-z0-9_.-]+/gi,'-'));
+  pdfHeader(doc, title.toUpperCase(), 'Registro documental SST', code);
+  let y = 42;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text(empresa.razonSocial, 14, y); y += 7;
+  Object.entries(record).filter(([k]) => !['firma','asistentesFirmas'].includes(k)).forEach(([key,value]) => { y = ensurePage(doc,y,18,code); const finalValue = Array.isArray(value) ? `${value.length} items` : value; y = pdfLabelValue(doc,key,finalValue,14,y,176) + 2; });
+  const img = signatureImage(record.firma); if(img){ y = ensurePage(doc,y,42,code); doc.setFont('helvetica','bold'); doc.text('Firma digital simple',14,y); y += 5; doc.addImage(img,'PNG',14,y,70,28); doc.text(formatDateTime(signatureTime(record.firma)),90,y+14); }
+  pdfFooter(doc, code); doc.save(`${title}-${record.id || 'registro'}.pdf`.replace(/[^a-z0-9_.-]+/gi,'-'));
 }
 
 function generateTrainingPdf(record){
+  const code = record.trazabilidad || traceCode('CAP');
   const doc = new jsPDF({ unit:'mm', format:'a4' });
-  const now = new Date().toLocaleString('es-CL');
-  doc.setFillColor(15,118,110); doc.rect(0,0,210,30,'F');
-  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('ACTA Y LISTA DE ASISTENCIA', 14, 14); doc.setFontSize(9); doc.text('Capacitacion SST · SEGAV SST GYD · DS44', 14, 22);
-  doc.setTextColor(15,23,42); doc.setFont('helvetica','normal'); doc.setFontSize(9);
-  let y = 40;
-  const headRows = [ ['Empresa', empresa.razonSocial], ['RUT empresa', empresa.rut], ['Ubicacion', empresa.ubicacion], ['Organismo administrador', empresa.organismo], ['Codigo', record.id], ['Tema', record.tema], ['Fecha', formatDate(record.fecha)], ['Hora', record.hora], ['Lugar', record.lugar], ['Modalidad', record.modalidad], ['Duracion', `${safe(record.duracion)} horas`], ['Relator', record.relator], ['Cargo relator', record.cargoRelator], ['Objetivo', record.objetivo], ['Estado', record.estado], ['Generado', now] ];
-  headRows.forEach(([k,v]) => { const text = doc.splitTextToSize(`${k}: ${safe(v)}`, 178); doc.text(text, 14, y); y += text.length * 5 + 1; if(y>255){ doc.addPage(); y=20; } });
-  y += 4; doc.setFont('helvetica','bold'); doc.text('Asistentes y firmas individuales', 14, y); y += 6; doc.setFont('helvetica','normal');
-  const asistentes = record.asistentesFirmas || [];
-  if(!asistentes.length){ doc.text('Sin asistentes seleccionados.', 14, y); y += 8; }
-  asistentes.forEach((a, index) => {
-    if(y > 228){ doc.addPage(); y = 20; }
-    doc.setFont('helvetica','bold'); doc.text(`${index + 1}. ${a.nombre}`, 14, y); y += 5;
-    doc.setFont('helvetica','normal'); doc.text(`RUT: ${safe(a.rut)} · Cargo: ${safe(a.cargo)}`, 14, y); y += 4;
-    if(a.firma && String(a.firma).startsWith('data:image')){ doc.addImage(a.firma, 'PNG', 14, y, 58, 21); doc.text('Firma trabajador', 78, y + 12); y += 26; } else { doc.line(14, y + 8, 82, y + 8); doc.text('Sin firma digital capturada', 86, y + 9); y += 15; }
-    doc.setDrawColor(226,232,240); doc.line(14, y, 196, y); y += 5;
+  const signed = (record.asistentesFirmas || []).filter(a => signatureImage(a.firma)).length;
+  const total = record.asistentesFirmas?.length || 0;
+  pdfHeader(doc, 'ACTA DE CAPACITACION SST', 'Lista de asistencia con firmas digitales simples', code);
+  let y = 42;
+  doc.setFillColor(248,250,252); doc.roundedRect(14,y,182,34,4,4,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(15,23,42); doc.text(empresa.razonSocial, 20, y+9);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(71,85,105); doc.text(`RUT: ${empresa.rut} · ${empresa.ubicacion}`, 20, y+15); doc.text(`Organismo administrador: ${empresa.organismo}`, 20, y+20); doc.text(`Generado: ${formatDateTime(record.generadoEn || nowIso())}`, 20, y+25);
+  doc.setFillColor(15,118,110); doc.roundedRect(150,y+8,34,14,3,3,'F'); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.text(`${signed}/${total}`,158,y+17); doc.setFontSize(6); doc.text('FIRMAS',160,y+22);
+  y += 44;
+  doc.setTextColor(15,23,42); doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text('1. Antecedentes de la capacitacion',14,y); y += 7;
+  const left = 14, right = 108;
+  y = Math.max(
+    pdfLabelValue(doc,'Tema',record.tema,left,y,84),
+    pdfLabelValue(doc,'Fecha y hora',`${formatDate(record.fecha)} · ${safe(record.hora)}`,right,y,78)
+  ) + 2;
+  y = Math.max(
+    pdfLabelValue(doc,'Lugar / modalidad',`${safe(record.lugar)} · ${safe(record.modalidad)}`,left,y,84),
+    pdfLabelValue(doc,'Duracion / estado',`${safe(record.duracion)} horas · ${safe(record.estado)}`,right,y,78)
+  ) + 2;
+  y = Math.max(
+    pdfLabelValue(doc,'Relator',record.relator,left,y,84),
+    pdfLabelValue(doc,'Cargo relator',record.cargoRelator,right,y,78)
+  ) + 2;
+  y = pdfLabelValue(doc,'Objetivo / descripcion',record.objetivo,left,y,176) + 6;
+  y = ensurePage(doc,y,30,code); doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42); doc.text('2. Asistencia y firmas individuales',14,y); y += 7;
+  if(!total){ doc.setFont('helvetica','normal'); doc.text('No se seleccionaron asistentes.',14,y); y += 8; }
+  (record.asistentesFirmas || []).forEach((a, index) => {
+    y = ensurePage(doc,y,34,code);
+    const rowTop = y; doc.setDrawColor(226,232,240); doc.setFillColor(255,255,255); doc.roundedRect(14,rowTop,182,30,3,3,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(15,23,42); doc.text(`${index+1}. ${a.nombre}`,18,rowTop+7);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(71,85,105); doc.text(`RUT: ${safe(a.rut)}`,18,rowTop+13); doc.text(`Cargo: ${safe(a.cargo)}`,18,rowTop+18); doc.text(`Centro: ${safe(a.centro)}`,18,rowTop+23);
+    const img = signatureImage(a.firma);
+    if(img){ doc.addImage(img,'PNG',116,rowTop+4,46,18); doc.setFontSize(6.5); doc.setTextColor(22,101,52); doc.text(`Firmado: ${formatDateTime(signatureTime(a.firma))}`,116,rowTop+25); }
+    else { doc.setDrawColor(148,163,184); doc.line(116,rowTop+17,184,rowTop+17); doc.setFontSize(7); doc.setTextColor(100,116,139); doc.text('Firma pendiente',136,rowTop+23); }
+    y += 35;
   });
-  if(y > 220){ doc.addPage(); y = 20; }
-  y += 5; doc.setFont('helvetica','bold'); doc.text('Firma relator / responsable', 14, y); y += 5; doc.setFont('helvetica','normal');
-  if(record.firma && String(record.firma).startsWith('data:image')){ doc.addImage(record.firma, 'PNG', 14, y, 70, 26); y += 31; } else { doc.line(14, y + 8, 88, y + 8); y += 14; }
-  doc.text(safe(record.relator), 14, y);
-  doc.setFontSize(8); doc.text('Documento generado por SEGAV SST GYD. Resguardar como evidencia auditable junto a fotografias si corresponde.', 14, 287);
-  doc.save(`Acta-Capacitacion-${record.id || 'registro'}.pdf`);
+  y = ensurePage(doc,y,48,code); doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42); doc.text('3. Cierre y firma del relator',14,y); y += 8;
+  const relImg = signatureImage(record.firma); doc.setDrawColor(226,232,240); doc.roundedRect(14,y,182,36,3,3,'D');
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(`Relator/responsable: ${safe(record.relator)}`,20,y+8); doc.text(`Cargo: ${safe(record.cargoRelator)}`,20,y+14);
+  if(relImg){ doc.addImage(relImg,'PNG',118,y+5,58,22); doc.setFontSize(6.5); doc.setTextColor(22,101,52); doc.text(`Firmado: ${formatDateTime(signatureTime(record.firma))}`,118,y+31); } else { doc.line(118,y+21,182,y+21); doc.setTextColor(100,116,139); doc.text('Firma relator pendiente',132,y+28); }
+  pdfFooter(doc, code); doc.save(`Acta-Capacitacion-${record.id || 'registro'}.pdf`);
 }
 
-function SignaturePad({onChange,height=130}){
-  const canvasRef = useRef(null); const drawing = useRef(false);
+function SignaturePad({onChange,height=130,signerName='Firmante',label='Firma digital simple'}){
+  const canvasRef = useRef(null); const drawing = useRef(false); const [signedAt,setSignedAt] = useState('');
   const pos = (event) => { const canvas = canvasRef.current; const rect = canvas.getBoundingClientRect(); const p = event.touches ? event.touches[0] : event; return { x:(p.clientX-rect.left)*(canvas.width/rect.width), y:(p.clientY-rect.top)*(canvas.height/rect.height) }; };
+  const emit = () => { if(!canvasRef.current) return; const time = nowIso(); setSignedAt(time); onChange({ dataUrl: canvasRef.current.toDataURL('image/png'), signedAt: time, signerName, method: 'canvas-touch-mouse' }); };
   const start = (event) => { event.preventDefault(); drawing.current = true; const ctx = canvasRef.current.getContext('2d'); const p = pos(event); ctx.beginPath(); ctx.moveTo(p.x,p.y); };
-  const move = (event) => { if(!drawing.current) return; event.preventDefault(); const ctx = canvasRef.current.getContext('2d'); const p = pos(event); ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.strokeStyle='#0f172a'; ctx.lineTo(p.x,p.y); ctx.stroke(); onChange(canvasRef.current.toDataURL('image/png')); };
-  const end = () => { drawing.current=false; if(canvasRef.current) onChange(canvasRef.current.toDataURL('image/png')); };
-  const clear = () => { const c=canvasRef.current; c.getContext('2d').clearRect(0,0,c.width,c.height); onChange(''); };
-  return <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3"><canvas ref={canvasRef} width="700" height="220" onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end} onTouchStart={start} onTouchMove={move} onTouchEnd={end} style={{width:'100%',height,background:'#fff',border:'1px solid #e2e8f0',borderRadius:16,touchAction:'none'}}/><div className="mt-2"><Btn secondary onClick={clear}>Limpiar firma</Btn></div></div>;
+  const move = (event) => { if(!drawing.current) return; event.preventDefault(); const ctx = canvasRef.current.getContext('2d'); const p = pos(event); ctx.lineWidth=2.8; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0f172a'; ctx.lineTo(p.x,p.y); ctx.stroke(); };
+  const end = () => { if(!drawing.current) return; drawing.current=false; emit(); };
+  const clear = () => { const c=canvasRef.current; c.getContext('2d').clearRect(0,0,c.width,c.height); setSignedAt(''); onChange(null); };
+  return <div className="rounded-3xl border border-slate-200 bg-slate-50 p-3" style={{boxShadow:signedAt?'0 0 0 3px rgba(20,184,166,.16)':'none'}}><div style={{display:'flex',justifyContent:'space-between',gap:8,alignItems:'center',flexWrap:'wrap'}}><div><p className="text-xs font-bold uppercase text-slate-500">{label}</p><p className="text-sm font-bold text-slate-900">{signerName}</p></div><span className="rounded-2xl px-3 py-2 text-xs font-bold" style={{background:signedAt?'#dcfce7':'#fff7ed',color:signedAt?'#166534':'#9a3412'}}>{signedAt?'Firmado':'Pendiente'}</span></div><canvas ref={canvasRef} width="900" height="260" onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end} onTouchStart={start} onTouchMove={move} onTouchEnd={end} style={{width:'100%',height,background:'#fff',border:'1px solid #cbd5e1',borderRadius:18,touchAction:'none',marginTop:10}}/><div className="mt-2" style={{display:'flex',gap:8,justifyContent:'space-between',alignItems:'center',flexWrap:'wrap'}}><p className="text-xs text-slate-500">{signedAt ? `Registrada: ${formatDateTime(signedAt)}` : 'Firmar dentro del recuadro con dedo o mouse.'}</p><Btn secondary onClick={clear}>Limpiar firma</Btn></div></div>;
 }
 
 export default function App(){
   const [data,setData] = useState(load); const [tab,setTab] = useState('Dashboard');
   const tabs = ['Dashboard','Trabajadores','Cargos y riesgos','Capacitaciones','IRL','RIOHS','EPP','Inspecciones','Hallazgos','Accidentes','Ley Karin','Documentos','Comite Paritario'];
   function patch(next){ setData(next); save(next); }
-  function add(key,item){ const record={id:uid(key.slice(0,3).toUpperCase()),...item}; patch({...data,[key]:[record,...(data[key]||[])]}); return record; }
+  function add(key,item){ const record={id:uid(key.slice(0,3).toUpperCase()),trazabilidad:traceCode(key.slice(0,3).toUpperCase()),generadoEn:nowIso(),...item}; patch({...data,[key]:[record,...(data[key]||[])]}); return record; }
   function addWorker(worker){ const record={...worker,id:nextWorkerId(data.trabajadores),nombre:normalizeWorkerName(worker.nombre),rut:formatRut(worker.rut),estado:worker.estado||'Activo'}; patch({...data, trabajadores:[record,...data.trabajadores]}); return record; }
   function deleteWorker(id){ patch({...data, trabajadores:data.trabajadores.filter(w=>w.id!==id)}); }
   function restoreSeed(){ patch({...data, trabajadores:trabajadoresSeed}); }
@@ -123,16 +158,17 @@ function Checklist(){ return <Card><h3 className="mb-2 font-black">Checklist bas
 
 function Capacitaciones({data,add}){
   const blank={tema:temas[0],fecha:today(),hora:'09:00',lugar:'Casa matriz / Planta',modalidad:'Presencial',duracion:1,relator:empresa.prevencionista,cargoRelator:'APR / Prevencionista',objetivo:'Entregar instruccion preventiva, registrar asistencia y dejar evidencia documental auditable.',estado:'Realizada'};
-  const [form,setForm]=useState(blank); const activos=data.trabajadores.filter(t=>t.estado==='Activo'); const [selected,setSelected]=useState(activos.map(t=>t.id)); const [relatorFirma,setRelatorFirma]=useState(''); const [firmas,setFirmas]=useState({});
+  const [form,setForm]=useState(blank); const activos=data.trabajadores.filter(t=>t.estado==='Activo'); const [selected,setSelected]=useState(activos.map(t=>t.id)); const [relatorFirma,setRelatorFirma]=useState(null); const [firmas,setFirmas]=useState({});
   const totalHoras=data.capacitaciones.reduce((s,c)=>s+Number(c.duracion||0),0); const proximas=useMemo(()=>[...data.capacitaciones].sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||''))).slice(0,5),[data.capacitaciones]);
+  const selectedWorkers = activos.filter(t=>selected.includes(t.id)); const signedCount = selectedWorkers.filter(t=>signatureImage(firmas[t.id])).length;
   const toggle=id=>setSelected(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
   const setFirmaTrabajador=(id, firma)=>setFirmas(prev=>({...prev,[id]:firma}));
-  const makeRecord=()=>{ const asistentesFirmas=activos.filter(t=>selected.includes(t.id)).map(t=>({id:t.id,nombre:t.nombre,rut:t.rut,cargo:t.cargo,centro:t.centro,firma:firmas[t.id]||''})); return {...form, asistentes:asistentesFirmas.length, asistentesDetalle:asistentesFirmas.map(a=>`${a.nombre} · ${a.rut} · ${a.cargo}`), asistentesFirmas, firma:relatorFirma}; };
-  const guardar=()=>{ const record=add('capacitaciones',makeRecord()); generateTrainingPdf(record); setForm(blank); setRelatorFirma(''); setFirmas({}); setSelected(activos.map(t=>t.id)); };
-  return <div className="space-y-5"><div className="grid gap-4 md:grid-cols-3"><Card style={{background:'linear-gradient(135deg,#0f766e 0%,#0f172a 100%)',color:'#fff'}}><p className="text-xs font-bold uppercase opacity-90">Capacitaciones</p><p className="mt-2 text-3xl font-black">{data.capacitaciones.length}</p><p className="mt-2 text-sm opacity-90">Con PDF y firmas individuales.</p></Card><Card><p className="text-xs font-bold uppercase text-slate-500">Horas registradas</p><p className="mt-2 text-3xl font-black">{totalHoras}</p></Card><Card><p className="text-xs font-bold uppercase text-slate-500">Asistentes activos</p><p className="mt-2 text-3xl font-black">{activos.length}</p></Card></div><div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]"><Card><p className="text-xs font-bold uppercase tracking-widest text-teal-700">Registro profesional</p><h2 className="text-2xl font-black">Capacitacion SST</h2><p className="text-sm text-slate-500">Cada trabajador asistente firma individualmente. Las firmas quedan dentro del PDF.</p><div className="mt-4 grid gap-3 md:grid-cols-3"><Field label="Tema"><Select value={form.tema} onChange={e=>setForm({...form,tema:e.target.value})}>{temas.map(t=><option key={t}>{t}</option>)}</Select></Field><Field label="Fecha"><Input type="date" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></Field><Field label="Hora"><Input type="time" value={form.hora} onChange={e=>setForm({...form,hora:e.target.value})}/></Field><Field label="Lugar"><Input value={form.lugar} onChange={e=>setForm({...form,lugar:e.target.value})}/></Field><Field label="Modalidad"><Select value={form.modalidad} onChange={e=>setForm({...form,modalidad:e.target.value})}><option>Presencial</option><option>Online</option><option>Mixta</option><option>En terreno</option></Select></Field><Field label="Duracion horas"><Input type="number" min="0.5" step="0.5" value={form.duracion} onChange={e=>setForm({...form,duracion:e.target.value})}/></Field><Field label="Relator"><Input value={form.relator} onChange={e=>setForm({...form,relator:e.target.value})}/></Field><Field label="Cargo relator"><Input value={form.cargoRelator} onChange={e=>setForm({...form,cargoRelator:e.target.value})}/></Field><Field label="Estado"><Select value={form.estado} onChange={e=>setForm({...form,estado:e.target.value})}><option>Programada</option><option>Realizada</option><option>Reprogramada</option><option>Anulada</option></Select></Field></div><div className="mt-4"><Field label="Objetivo / descripcion"><TextArea value={form.objetivo} onChange={e=>setForm({...form,objetivo:e.target.value})}/></Field></div><div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4"><div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'center',flexWrap:'wrap'}}><div><h3 className="font-black">Asistencia y firmas</h3><p className="text-sm text-slate-500">Selecciona y firma por cada trabajador asistente.</p></div><Btn secondary onClick={()=>setSelected(activos.map(t=>t.id))}>Seleccionar todos</Btn></div><div className="mt-3 grid gap-3">{activos.map(t=>{ const is=selected.includes(t.id); return <div key={t.id} className="rounded-2xl bg-white p-3" style={{border:is?'2px solid #0f766e':'1px solid #e2e8f0'}}><label className="text-sm"><input type="checkbox" className="mr-2" checked={is} onChange={()=>toggle(t.id)}/><b>{t.nombre}</b> · {t.rut}<br/><span className="text-xs text-slate-500">{t.cargo} · {t.centro}</span></label>{is && <div className="mt-3"><p className="text-xs font-bold uppercase text-slate-500">Firma de {t.nombre}</p><SignaturePad height={105} onChange={(firma)=>setFirmaTrabajador(t.id,firma)}/></div>}</div>; })}</div></div><div className="mt-4"><h3 className="font-black">Firma relator / responsable</h3><SignaturePad onChange={setRelatorFirma}/></div><div className="mt-4" style={{display:'flex',gap:8,flexWrap:'wrap'}}><Btn onClick={guardar}>Guardar y generar acta PDF</Btn><Btn secondary onClick={()=>generateTrainingPdf({...makeRecord(),id:'BORRADOR'})}>PDF borrador</Btn></div></Card><div className="space-y-5"><Card><h3 className="font-black">Calendario / historial reciente</h3><div className="mt-3 space-y-1">{proximas.map(item=><div key={item.id} className="rounded-2xl bg-slate-50 p-3"><p className="text-xs font-bold uppercase text-teal-700">{formatDate(item.fecha)} · {item.hora||'Sin hora'}</p><p className="font-bold">{item.tema}</p><p className="text-xs text-slate-500">{item.lugar} · {item.asistentes||0} asistentes · {item.estado||'Sin estado'}</p></div>)}</div></Card><Card><h3 className="font-black">PDF auditable</h3><p className="mt-2 text-sm text-slate-600">El acta ahora incluye firma individual de cada asistente y firma del relator. Esto mejora la trazabilidad del registro.</p></Card></div></div><TrainingTable rows={data.capacitaciones}/></div>;
+  const makeRecord=()=>{ const asistentesFirmas=selectedWorkers.map(t=>({id:t.id,nombre:t.nombre,rut:t.rut,cargo:t.cargo,centro:t.centro,firma:firmas[t.id]||null})); return {...form, asistentes:asistentesFirmas.length, asistentesDetalle:asistentesFirmas.map(a=>`${a.nombre} · ${a.rut} · ${a.cargo}`), asistentesFirmas, firma:relatorFirma, firmadoEn:nowIso()}; };
+  const guardar=()=>{ const record=add('capacitaciones',makeRecord()); generateTrainingPdf(record); setForm(blank); setRelatorFirma(null); setFirmas({}); setSelected(activos.map(t=>t.id)); };
+  return <div className="space-y-5"><div className="grid gap-4 md:grid-cols-3"><Card style={{background:'linear-gradient(135deg,#0f766e 0%,#0f172a 100%)',color:'#fff'}}><p className="text-xs font-bold uppercase opacity-90">Capacitaciones</p><p className="mt-2 text-3xl font-black">{data.capacitaciones.length}</p><p className="mt-2 text-sm opacity-90">PDF profesional y trazabilidad.</p></Card><Card><p className="text-xs font-bold uppercase text-slate-500">Firmas capturadas</p><p className="mt-2 text-3xl font-black">{signedCount}/{selected.length}</p><p className="mt-2 text-sm text-slate-500">Asistentes seleccionados.</p></Card><Card><p className="text-xs font-bold uppercase text-slate-500">Horas registradas</p><p className="mt-2 text-3xl font-black">{totalHoras}</p></Card></div><div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]"><Card><p className="text-xs font-bold uppercase tracking-widest text-teal-700">Registro profesional</p><h2 className="text-2xl font-black">Capacitacion SST</h2><p className="text-sm text-slate-500">Sistema de firma mejorado: cada trabajador firma con sello de fecha/hora y el PDF organiza las firmas por pagina.</p><div className="mt-4 grid gap-3 md:grid-cols-3"><Field label="Tema"><Select value={form.tema} onChange={e=>setForm({...form,tema:e.target.value})}>{temas.map(t=><option key={t}>{t}</option>)}</Select></Field><Field label="Fecha"><Input type="date" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></Field><Field label="Hora"><Input type="time" value={form.hora} onChange={e=>setForm({...form,hora:e.target.value})}/></Field><Field label="Lugar"><Input value={form.lugar} onChange={e=>setForm({...form,lugar:e.target.value})}/></Field><Field label="Modalidad"><Select value={form.modalidad} onChange={e=>setForm({...form,modalidad:e.target.value})}><option>Presencial</option><option>Online</option><option>Mixta</option><option>En terreno</option></Select></Field><Field label="Duracion horas"><Input type="number" min="0.5" step="0.5" value={form.duracion} onChange={e=>setForm({...form,duracion:e.target.value})}/></Field><Field label="Relator"><Input value={form.relator} onChange={e=>setForm({...form,relator:e.target.value})}/></Field><Field label="Cargo relator"><Input value={form.cargoRelator} onChange={e=>setForm({...form,cargoRelator:e.target.value})}/></Field><Field label="Estado"><Select value={form.estado} onChange={e=>setForm({...form,estado:e.target.value})}><option>Programada</option><option>Realizada</option><option>Reprogramada</option><option>Anulada</option></Select></Field></div><div className="mt-4"><Field label="Objetivo / descripcion"><TextArea value={form.objetivo} onChange={e=>setForm({...form,objetivo:e.target.value})}/></Field></div><div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4"><div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'center',flexWrap:'wrap'}}><div><h3 className="font-black">Asistencia y firmas</h3><p className="text-sm text-slate-500">Selecciona asistentes. Cada firma queda sellada con fecha y hora.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Btn secondary onClick={()=>setSelected(activos.map(t=>t.id))}>Todos</Btn><Btn secondary onClick={()=>setSelected([])}>Ninguno</Btn></div></div><div className="mt-3 grid gap-3">{activos.map(t=>{ const is=selected.includes(t.id); const signed = signatureImage(firmas[t.id]); return <div key={t.id} className="rounded-2xl bg-white p-3" style={{border:is?'2px solid #0f766e':'1px solid #e2e8f0'}}><div style={{display:'flex',justifyContent:'space-between',gap:10,alignItems:'start',flexWrap:'wrap'}}><label className="text-sm"><input type="checkbox" className="mr-2" checked={is} onChange={()=>toggle(t.id)}/><b>{t.nombre}</b> · {t.rut}<br/><span className="text-xs text-slate-500">{t.cargo} · {t.centro}</span></label><span className="rounded-2xl px-3 py-2 text-xs font-bold" style={{background:signed?'#dcfce7':is?'#fff7ed':'#f1f5f9',color:signed?'#166534':is?'#9a3412':'#64748b'}}>{signed?'Firmado':is?'Pendiente':'No asiste'}</span></div>{is && <div className="mt-3"><SignaturePad height={112} signerName={t.nombre} label="Firma trabajador asistente" onChange={(firma)=>setFirmaTrabajador(t.id,firma)}/></div>}</div>; })}</div></div><div className="mt-4"><h3 className="font-black">Firma relator / responsable</h3><SignaturePad signerName={form.relator} label="Firma relator / responsable" onChange={setRelatorFirma}/></div><div className="mt-4" style={{display:'flex',gap:8,flexWrap:'wrap'}}><Btn onClick={guardar}>Guardar y generar acta PDF</Btn><Btn secondary onClick={()=>generateTrainingPdf({...makeRecord(),id:'BORRADOR',trazabilidad:traceCode('CAP')})}>PDF borrador</Btn></div></Card><div className="space-y-5"><Card><h3 className="font-black">Calendario / historial reciente</h3><div className="mt-3 space-y-1">{proximas.map(item=><div key={item.id} className="rounded-2xl bg-slate-50 p-3"><p className="text-xs font-bold uppercase text-teal-700">{formatDate(item.fecha)} · {item.hora||'Sin hora'}</p><p className="font-bold">{item.tema}</p><p className="text-xs text-slate-500">{item.lugar} · {item.asistentes||0} asistentes · {item.estado||'Sin estado'}</p></div>)}</div></Card><Card><h3 className="font-black">PDF dinamico</h3><p className="mt-2 text-sm text-slate-600">El PDF ajusta paginas automaticamente, incluye codigo de trazabilidad, resumen de firmas, tabla profesional y sello de fecha/hora por firmante.</p></Card></div></div><TrainingTable rows={data.capacitaciones}/></div>;
 }
 
-function TrainingTable({rows}){ return <Card><h3 className="mb-3 font-black">Historial de capacitaciones</h3><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{['ID','Fecha','Hora','Tema','Lugar','Asistentes','Firmas','PDF'].map(h=><th key={h} className="border-b p-2 uppercase text-slate-500">{h}</th>)}</tr></thead><tbody>{rows.map(r=>{ const firmadas=(r.asistentesFirmas||[]).filter(a=>a.firma).length; return <tr key={r.id}><td className="border-b p-2">{r.id}</td><td className="border-b p-2">{formatDate(r.fecha)}</td><td className="border-b p-2">{r.hora||'-'}</td><td className="border-b p-2">{r.tema}</td><td className="border-b p-2">{r.lugar}</td><td className="border-b p-2">{r.asistentes||0}</td><td className="border-b p-2">{firmadas}/{r.asistentes||0}</td><td className="border-b p-2"><button className="rounded-2xl bg-teal-700 px-3 py-2 text-xs font-bold text-white" onClick={()=>generateTrainingPdf(r)}>PDF</button></td></tr>; })}</tbody></table></div></Card>; }
+function TrainingTable({rows}){ return <Card><h3 className="mb-3 font-black">Historial de capacitaciones</h3><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{['ID','Fecha','Hora','Tema','Lugar','Asistentes','Firmas','Trazabilidad','PDF'].map(h=><th key={h} className="border-b p-2 uppercase text-slate-500">{h}</th>)}</tr></thead><tbody>{rows.map(r=>{ const firmadas=(r.asistentesFirmas||[]).filter(a=>signatureImage(a.firma)).length; return <tr key={r.id}><td className="border-b p-2">{r.id}</td><td className="border-b p-2">{formatDate(r.fecha)}</td><td className="border-b p-2">{r.hora||'-'}</td><td className="border-b p-2">{r.tema}</td><td className="border-b p-2">{r.lugar}</td><td className="border-b p-2">{r.asistentes||0}</td><td className="border-b p-2">{firmadas}/{r.asistentes||0}</td><td className="border-b p-2">{r.trazabilidad||'-'}</td><td className="border-b p-2"><button className="rounded-2xl bg-teal-700 px-3 py-2 text-xs font-bold text-white" onClick={()=>generateTrainingPdf(r)}>PDF</button></td></tr>; })}</tbody></table></div></Card>; }
 
-function Generic({title,storageKey,list,fields,add,options={},extra,note}){ const blank=Object.fromEntries(fields.map(f=>[f,''])); const [form,setForm]=useState(blank); const [firma,setFirma]=useState(''); const saveAndPdf=()=>{ const record=add(storageKey,{...form,firma}); generateRecordPdf(title,record); setForm(blank); setFirma(''); }; return <div className="space-y-5"><Card><h2 className="mb-3 text-lg font-black">Nuevo registro: {title}</h2>{note&&<p className="mb-3 rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-800">{note}</p>}<div className="grid gap-3 md:grid-cols-3">{fields.map(f=><Field key={f} label={f}>{options[f]?<Select value={form[f]} onChange={e=>setForm({...form,[f]:e.target.value})}><option value="">Seleccionar</option>{options[f].map(o=><option key={o}>{o}</option>)}</Select>:<Input value={form[f]} onChange={e=>setForm({...form,[f]:e.target.value})}/>}</Field>)}</div><div className="mt-4"><SignaturePad onChange={setFirma}/></div><div className="mt-4" style={{display:'flex',gap:8,flexWrap:'wrap'}}><Btn onClick={saveAndPdf}>Guardar y generar PDF</Btn><Btn secondary onClick={()=>generateRecordPdf(title,{...form,firma,id:'BORRADOR'})}>PDF borrador</Btn></div></Card>{extra}<Table rows={list}/></div>; }
-function Table({rows}){ const keys=Object.keys(rows[0]||{id:'ID'}); return <Card><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{keys.map(k=><th key={k} className="border-b p-2 uppercase text-slate-500">{k}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}>{keys.map(k=><td key={k} className="border-b p-2">{k==='firma' ? (r[k]?'Firmado':'Sin firma') : Array.isArray(r[k]) ? `${r[k].length} items` : String(r[k] ?? '')}</td>)}</tr>)}</tbody></table></div></Card>; }
+function Generic({title,storageKey,list,fields,add,options={},extra,note}){ const blank=Object.fromEntries(fields.map(f=>[f,''])); const [form,setForm]=useState(blank); const [firma,setFirma]=useState(null); const saveAndPdf=()=>{ const record=add(storageKey,{...form,firma}); generateRecordPdf(title,record); setForm(blank); setFirma(null); }; return <div className="space-y-5"><Card><h2 className="mb-3 text-lg font-black">Nuevo registro: {title}</h2>{note&&<p className="mb-3 rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-800">{note}</p>}<div className="grid gap-3 md:grid-cols-3">{fields.map(f=><Field key={f} label={f}>{options[f]?<Select value={form[f]} onChange={e=>setForm({...form,[f]:e.target.value})}><option value="">Seleccionar</option>{options[f].map(o=><option key={o}>{o}</option>)}</Select>:<Input value={form[f]} onChange={e=>setForm({...form,[f]:e.target.value})}/>}</Field>)}</div><div className="mt-4"><SignaturePad signerName={title} onChange={setFirma}/></div><div className="mt-4" style={{display:'flex',gap:8,flexWrap:'wrap'}}><Btn onClick={saveAndPdf}>Guardar y generar PDF</Btn><Btn secondary onClick={()=>generateRecordPdf(title,{...form,firma,id:'BORRADOR',trazabilidad:traceCode('REG')})}>PDF borrador</Btn></div></Card>{extra}<Table rows={list}/></div>; }
+function Table({rows}){ const keys=Object.keys(rows[0]||{id:'ID'}); return <Card><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{keys.map(k=><th key={k} className="border-b p-2 uppercase text-slate-500">{k}</th>)}</tr></thead><tbody>{rows.map(r=><tr key={r.id}>{keys.map(k=><td key={k} className="border-b p-2">{k==='firma' ? (signatureImage(r[k])?'Firmado':'Sin firma') : Array.isArray(r[k]) ? `${r[k].length} items` : String(r[k] ?? '')}</td>)}</tr>)}</tbody></table></div></Card>; }
