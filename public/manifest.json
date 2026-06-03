@@ -1,0 +1,14 @@
+{
+  "name": "SEGAV SST GYD",
+  "short_name": "SEGAV SST",
+  "description": "App mobile SST DS44 para registros, firmas y PDF",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0f766e",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
