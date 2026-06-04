@@ -2,6 +2,7 @@ import { getStoredSupabaseConfig, saveStoredSupabaseConfig, clearStoredSupabaseC
 import { saveOnlineState, testOnlineConnection } from './onlineStore.js';
 
 const STATE_KEY = 'segav-mobile-state';
+const ADMIN_PIN = 'SEGAV2026';
 
 function readCurrentState() {
   try {
@@ -17,7 +18,7 @@ function styleButton(button, primary = false) {
   button.style.padding = '10px 12px';
   button.style.fontWeight = '900';
   button.style.cursor = 'pointer';
-  button.style.background = primary ? '#0f766e' : '#f1f5f9';
+  button.style.background = primary ? 'linear-gradient(135deg,#0f766e,#c2410c)' : '#f1f5f9';
   button.style.color = primary ? '#fff' : '#0f172a';
 }
 
@@ -48,52 +49,54 @@ function createInput(labelText, value = '', placeholder = '') {
   return { wrap, input };
 }
 
-export function installSupabaseSetupPanel() {
-  if (document.getElementById('segav-supabase-panel-button')) return;
+function requestAdminAccess() {
+  const pin = window.prompt('Menú administrador SEGAV\nIngresa el PIN de acceso:');
+  return pin === ADMIN_PIN;
+}
 
-  const button = document.createElement('button');
-  button.id = 'segav-supabase-panel-button';
-  button.textContent = 'Supabase';
-  button.style.position = 'fixed';
-  button.style.right = '14px';
-  button.style.bottom = '92px';
-  button.style.zIndex = '9999';
-  button.style.border = '0';
-  button.style.borderRadius = '999px';
-  button.style.padding = '12px 16px';
-  button.style.fontWeight = '900';
-  button.style.color = '#fff';
-  button.style.background = 'linear-gradient(135deg,#0f766e,#c2410c)';
-  button.style.boxShadow = '0 18px 38px rgba(15,23,42,.28)';
-  button.style.cursor = 'pointer';
+export function installSupabaseSetupPanel() {
+  if (document.getElementById('segav-supabase-panel')) return;
 
   const panel = document.createElement('div');
   panel.id = 'segav-supabase-panel';
   panel.style.position = 'fixed';
   panel.style.right = '14px';
-  panel.style.bottom = '146px';
+  panel.style.bottom = '92px';
   panel.style.width = 'min(420px, calc(100vw - 28px))';
   panel.style.maxHeight = '72vh';
   panel.style.overflow = 'auto';
   panel.style.zIndex = '9999';
-  panel.style.background = '#fff';
+  panel.style.background = 'rgba(255,255,255,.96)';
   panel.style.border = '1px solid #e2e8f0';
   panel.style.borderRadius = '24px';
   panel.style.padding = '16px';
   panel.style.boxShadow = '0 24px 70px rgba(15,23,42,.28)';
+  panel.style.backdropFilter = 'blur(18px)';
   panel.style.display = 'none';
 
   const config = getStoredSupabaseConfig();
 
+  const topRow = document.createElement('div');
+  topRow.style.display = 'flex';
+  topRow.style.justifyContent = 'space-between';
+  topRow.style.alignItems = 'center';
+  topRow.style.gap = '10px';
+
   const title = document.createElement('h3');
-  title.textContent = 'Conexión Supabase';
+  title.textContent = 'Menú secreto · Supabase';
   title.style.margin = '0';
   title.style.fontSize = '18px';
   title.style.fontWeight = '1000';
   title.style.color = '#0f172a';
 
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Cerrar';
+  styleButton(closeBtn, false);
+  closeBtn.onclick = () => { panel.style.display = 'none'; };
+  topRow.append(title, closeBtn);
+
   const help = document.createElement('p');
-  help.textContent = 'Pega aquí Project URL y anon/public key. No uses service_role ni claves secretas.';
+  help.textContent = 'Panel oculto. Acceso: tocar el logo 6 veces y luego ingresar PIN. No uses service_role ni claves secretas.';
   help.style.margin = '6px 0 10px';
   help.style.fontSize = '12px';
   help.style.color = '#64748b';
@@ -169,8 +172,32 @@ export function installSupabaseSetupPanel() {
   };
 
   row.append(saveBtn, syncBtn, clearBtn);
-  panel.append(title, help, urlField.wrap, keyField.wrap, status, row);
-  button.onclick = () => { panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; };
+  panel.append(topRow, help, urlField.wrap, keyField.wrap, status, row);
+  document.body.append(panel);
 
-  document.body.append(panel, button);
+  const openPanel = () => {
+    if (!requestAdminAccess()) return;
+    panel.style.display = 'block';
+  };
+
+  let logoTapCount = 0;
+  let tapTimer = null;
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    const isLogo = target?.closest?.('.logo-card') || String(target?.alt || '').toLowerCase().includes('logo');
+    if (!isLogo) return;
+    logoTapCount += 1;
+    window.clearTimeout(tapTimer);
+    tapTimer = window.setTimeout(() => { logoTapCount = 0; }, 3500);
+    if (logoTapCount >= 6) {
+      logoTapCount = 0;
+      openPanel();
+    }
+  }, true);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && event.altKey && event.key.toLowerCase() === 's') {
+      openPanel();
+    }
+  });
 }
