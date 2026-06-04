@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles.css';
 import { saveOnlineState, hasDatabase } from './lib/onlineStore.js';
+import { installSupabaseSetupPanel } from './lib/supabaseSetupPanel.js';
 
 const root = document.getElementById('root');
 
@@ -23,3 +24,7 @@ window.__SEGAV_SYNC_SUPABASE__ = async (appData) => {
     return { ok: false, mode: 'local', error };
   }
 };
+
+setTimeout(() => {
+  installSupabaseSetupPanel();
+}, 500);
