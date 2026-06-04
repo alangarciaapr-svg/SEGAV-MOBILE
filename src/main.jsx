@@ -15,7 +15,7 @@ function installOnlineSync() {
   const originalSetItem = localStorage.setItem.bind(localStorage);
   localStorage.setItem = (key, value) => {
     originalSetItem(key, value);
-    if (key === STATE_KEY && hasDatabase) {
+    if (key === STATE_KEY && hasDatabase()) {
       try {
         const parsed = JSON.parse(value);
         saveOnlineState(parsed).catch((error) => console.warn('No se pudo sincronizar con Supabase', error));
@@ -28,7 +28,7 @@ function installOnlineSync() {
 
 async function bootstrap() {
   installOnlineSync();
-  if (hasDatabase) {
+  if (hasDatabase()) {
     try {
       const onlineState = await fetchOnlineState();
       if (onlineState && Object.keys(onlineState).length > 0) {
