@@ -1,4 +1,4 @@
-import { hasDatabase, supabase } from './supabaseClient.js';
+import { getSupabaseClient, hasDatabase } from './supabaseClient.js';
 
 const LOCAL_KEY = 'segav-mobile-state';
 const ROW_ID = 'main';
@@ -21,7 +21,9 @@ export function clearLocalState() {
 }
 
 export async function fetchOnlineState() {
-  if (!hasDatabase || !supabase) return null;
+  if (!hasDatabase()) return null;
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from('segav_app_state')
     .select('data, updated_at')
@@ -32,12 +34,26 @@ export async function fetchOnlineState() {
 }
 
 export async function saveOnlineState(appData) {
-  if (!hasDatabase || !supabase) return { ok: false, mode: 'local' };
+  if (!hasDatabase()) return { ok: false, mode: 'local' };
+  const supabase = getSupabaseClient();
+  if (!supabase) return { ok: false, mode: 'local' };
   const { error } = await supabase
     .from('segav_app_state')
     .upsert({ id: ROW_ID, data: appData, updated_at: new Date().toISOString() }, { onConflict: 'id' });
   if (error) throw error;
   return { ok: true, mode: 'supabase' };
+}
+
+export async function testOnlineConnection() {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { ok: false, message: 'Falta configurar URL y anon key de Supabase.' };
+  const { error } = await supabase
+    .from('segav_app_state')
+    .select('id, updated_at')
+    .eq('id', ROW_ID)
+    .maybeSingle();
+  if (error) return { ok: false, message: error.message };
+  return { ok: true, message: 'Conexion Supabase OK.' };
 }
 
 export { hasDatabase };
