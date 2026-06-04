@@ -5,29 +5,22 @@ import './styles.css';
 import { fetchOnlineState, saveOnlineState, writeLocalState, hasDatabase } from './lib/onlineStore.js';
 
 const ROOT = document.getElementById('root');
-const STATE_KEY = 'segav-mobile-state';
 
 function renderApp() {
   createRoot(ROOT).render(<App />);
 }
 
-function installOnlineSync() {
-  const originalSetItem = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = (key, value) => {
-    originalSetItem(key, value);
-    if (key === STATE_KEY && hasDatabase()) {
-      try {
-        const parsed = JSON.parse(value);
-        saveOnlineState(parsed).catch((error) => console.warn('No se pudo sincronizar con Supabase', error));
-      } catch (error) {
-        console.warn('Estado local no sincronizable', error);
-      }
-    }
-  };
-}
+window.__SEGAV_SYNC_SUPABASE__ = async (appData) => {
+  if (!hasDatabase()) return { ok: false, mode: 'local' };
+  try {
+    return await saveOnlineState(appData);
+  } catch (error) {
+    console.warn('No se pudo sincronizar con Supabase', error);
+    return { ok: false, mode: 'local', error };
+  }
+};
 
 async function bootstrap() {
-  installOnlineSync();
   if (hasDatabase()) {
     try {
       const onlineState = await fetchOnlineState();
