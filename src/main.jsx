@@ -7,6 +7,30 @@ import { installSupabaseSetupPanel } from './lib/supabaseSetupPanel.js';
 
 const root = document.getElementById('root');
 
+function installMobileZoomLock() {
+  let lastTouchEnd = 0;
+
+  document.addEventListener('gesturestart', (event) => event.preventDefault(), { passive: false });
+  document.addEventListener('gesturechange', (event) => event.preventDefault(), { passive: false });
+  document.addEventListener('gestureend', (event) => event.preventDefault(), { passive: false });
+
+  document.addEventListener('touchmove', (event) => {
+    if (event.touches && event.touches.length > 1) event.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 320) event.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  document.addEventListener('wheel', (event) => {
+    if (event.ctrlKey) event.preventDefault();
+  }, { passive: false });
+}
+
+installMobileZoomLock();
+
 createRoot(root).render(
   <React.StrictMode>
     <App />
