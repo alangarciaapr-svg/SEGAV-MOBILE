@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf';
 import { LOGO_DATA_URL } from '../assets/logoMaderasGd.js';
 
+const DOCUMENT_CREATION_DATE = '05/01/2026';
+
 const empresa = {
   razonSocial: 'SOCIEDAD MADERERA GÁLVEZ Y DI GÉNOVA LTDA.',
   rut: '77.110.060-0',
@@ -23,7 +25,6 @@ const charlaTypes = [
   ['TRIPTICO','RECAPACITACION','OTROS']
 ];
 
-function today(){ return new Date().toISOString().slice(0,10); }
 function formatDate(value){ if(!value) return ''; const [y,m,d] = String(value).split('-'); return d && m && y ? `${d}-${m}-${y}` : String(value); }
 function formatDateTime(value){ if(!value) return ''; try { return new Date(value).toLocaleString('es-CL'); } catch { return String(value); } }
 function safe(value){ return value ? String(value) : ''; }
@@ -75,7 +76,7 @@ function header(doc, title, page=1, pages=1){
   centered(doc, 'SISTEMA DE GESTION', centerX, top+rowH, centerW, rowH, 8.3, true);
   centered(doc, 'SALUD Y SEGURIDAD OCUPACIONAL', centerX, top+rowH*2, centerW, rowH, 8.3, true);
   centered(doc, meta.nombre, centerX, top+rowH*3, centerW, rowH, 7.5, true);
-  [['CODIGO', meta.codigo],['VERSION','1.0'],['FECHA',formatDate(today())],['PAGINA',`${page} DE ${pages}`]].forEach(([a,b],i)=>{
+  [['CODIGO', meta.codigo],['VERSION','1.0'],['FECHA',DOCUMENT_CREATION_DATE],['PAGINA',`${page} DE ${pages}`]].forEach(([a,b],i)=>{
     centered(doc, a, labelX, top+i*rowH, labelW, rowH, 7.8, true);
     centered(doc, b, valueX, top+i*rowH, valueW, rowH, 7.8, true);
   });
@@ -119,12 +120,16 @@ function markX(doc, x, y, w, h, active){
   doc.text('X', x+w/2, y+h/2+1.5, { align:'center' });
 }
 
-function signatureInCell(doc, sig, x, y, w, h){
+function signatureInCell(doc, sig, x, y, w, h, opts={}){
   const img = signatureImage(sig);
-  if(img){
-    try { doc.addImage(img, 'PNG', x+2, y+1.5, w-4, h-3); }
-    catch { doc.line(x+3,y+h/2,x+w-3,y+h/2); }
-  }
+  if(!img) return;
+  const scale = opts.scale || 1.65;
+  const dx = opts.dx ?? 1.5;
+  const dy = opts.dy ?? -h * 0.32;
+  const dw = Math.max(8, w - 3);
+  const dh = Math.max(7, h * scale);
+  try { doc.addImage(img, 'PNG', x + dx, y + dy, dw, dh); }
+  catch { doc.line(x+3,y+h/2,x+w-3,y+h/2); }
 }
 
 function finish(doc, filename, title){
@@ -147,7 +152,7 @@ export function generateTrainingPdf(record){
   doc.text('HORA TERMINO:', 168, y+4); cell(doc, 190, y-1, 12, 7, safe(record.horaTermino || ''), { bold:false, size:8, align:'center' }); y+=11;
 
   redBar(doc, 10, y, 192, 6, 'TIPO DE CHARLA', 9); y+=6;
-  const startX=10, totalW=192, labelW=44, boxW=16, rowH=6;
+  const startX=10, labelW=44, boxW=16, rowH=6;
   charlaTypes.forEach((row, r)=>{
     row.forEach((label, c)=>{
       const x=startX + c*(labelW+boxW);
@@ -166,12 +171,12 @@ export function generateTrainingPdf(record){
   y += 27;
 
   const all = record.asistentesFirmas || [];
-  const perPage = 21;
-  for(let page=0; page<Math.max(1, Math.ceil(all.length/perPage)); page++){
-    if(page>0){ doc.addPage(); header(doc, title, page+1, Math.ceil(all.length/perPage)); y=48; }
-    redBar(doc, 10, y, 192, 0.1, '');
+  const perPage = 18;
+  const totalPages = Math.max(1, Math.ceil(all.length/perPage));
+  for(let page=0; page<totalPages; page++){
+    if(page>0){ doc.addPage(); header(doc, title, page+1, totalPages); y=48; }
     const tableY = y;
-    const hHead=7, hRow=6.3;
+    const hHead=7, hRow=7.6;
     cell(doc,10,tableY,8,hHead,'N°',{red:true,size:8,align:'center'});
     cell(doc,18,tableY,94,hHead,'NOMBRE',{red:true,size:8,align:'center'});
     cell(doc,112,tableY,44,hHead,'R.U.T.',{red:true,size:8,align:'center'});
@@ -183,13 +188,13 @@ export function generateTrainingPdf(record){
       cell(doc,18,yy,94,hRow,safe(a.nombre),{bold:false,size:7.2});
       cell(doc,112,yy,44,hRow,safe(a.rut),{bold:false,size:7.2,align:'center'});
       cell(doc,156,yy,46,hRow,'',{bold:false});
-      signatureInCell(doc, a.firma, 156, yy, 46, hRow);
+      signatureInCell(doc, a.firma, 156, yy, 46, hRow, { scale:1.75, dy:-2.2 });
     }
     y = tableY+hHead+perPage*hRow+8;
-    if(page === Math.ceil(all.length/perPage)-1){
+    if(page === totalPages-1){
       doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.text('FIRMA Y TIMBRE RELATOR', 39, 284, { align:'center' });
       cell(doc, 112, 276, 44, 12, '', { bold:false }); cell(doc, 156, 276, 46, 12, '', { bold:false });
-      signatureInCell(doc, record.firma, 112, 276, 90, 12);
+      signatureInCell(doc, record.firma, 112, 276, 90, 12, { scale:1.75, dy:-4 });
     }
   }
   finish(doc, `RG-GD-02-REGISTRO-DE-CAPACITACION-${record.id || 'registro'}.pdf`, title);
@@ -201,23 +206,23 @@ export function generateEppPdf(record){
   let y=52;
   const intro = `La empresa ${empresa.razonSocial}. Hace entrega de los elementos de protección personal de acuerdo a lo estipulado en la ley 16.744, Art. 68, inciso 3 y lo estipulado en el DS 44 del ministerio del trabajo y previsión social de Chile “Las empresas deberán proporcionar a sus trabajadores, los equipos e implementos necesarios, no pudiendo en caso alguno cobrarles su valor”.`;
   y = paragraph(doc, intro, 24, y, 162, { size:10.7, align:'center', lineH:5.2 }) + 12;
-  const labelW=35, valueW=145, rowH=7;
-  [['NOMBRE', record.trabajador],['RUT', record.rut],['CARGO', record.cargo],['FECHA', formatDate(record.fecha)]].forEach(([l,v],i)=>{ cell(doc,18,y+i*rowH,labelW,rowH,l,{bold:true,size:9}); cell(doc,53,y+i*rowH,valueW,rowH,safe(v),{bold:false,size:8.6}); });
-  y += rowH*4 + 9;
+  const labelW=35, valueW=145, rowH2=7;
+  [['NOMBRE', record.trabajador],['RUT', record.rut],['CARGO', record.cargo],['FECHA', formatDate(record.fecha)]].forEach(([l,v],i)=>{ cell(doc,18,y+i*rowH2,labelW,rowH2,l,{bold:true,size:9}); cell(doc,53,y+i*rowH2,valueW,rowH2,safe(v),{bold:false,size:8.6}); });
+  y += rowH2*4 + 9;
   redBar(doc,18,y,180,7,'ELEMENTOS DE PROTECCION PERSONAL',9.3); y+=7;
-  const itemW=35, boxW=8, gap=0, itemH=11;
+  const itemW=35, boxW=8, itemH=11;
   const selected = normalize(record.item);
   for(let r=0;r<5;r++){
     for(let c=0;c<4;c++){
-      const item=eppItems[r*4+c]; const x=18+c*(itemW+boxW+gap); const yy=y+r*itemH;
+      const item=eppItems[r*4+c]; const x=18+c*(itemW+boxW); const yy=y+r*itemH;
       cell(doc,x,yy,itemW,itemH,item,{bold:true,size:7.8,align:'center'}); cell(doc,x+itemW,yy,boxW,itemH,'',{bold:false});
-      markX(doc,x+itemW,yy,boxW,itemH, selected && normalize(item).includes(selected.replace('PROTECCION AUDITIVA','FONO AUDITIVO')) || selected.includes(normalize(item)));
+      markX(doc,x+itemW,yy,boxW,itemH, selected && (normalize(item).includes(selected.replace('PROTECCION AUDITIVA','FONO AUDITIVO')) || selected.includes(normalize(item))));
     }
   }
   y += itemH*5 + 13;
   const commitment='El trabajador se compromete a mantener los Elementos de Protección Personal en buen estado y declara haberlos recibido en forma gratuita. Además, se compromete a utilizar los implementos durante la totalidad de su jornada laboral.';
-  y = paragraph(doc, commitment, 24, y, 162, { size:10.6, align:'center', lineH:5.2 }) + 45;
-  signatureInCell(doc, record.firma, 65, y-19, 80, 18);
+  y = paragraph(doc, commitment, 24, y, 162, { size:10.6, align:'center', lineH:5.2 }) + 43;
+  signatureInCell(doc, record.firma, 55, y-25, 100, 22, { scale:1.7, dy:-6 });
   doc.setDrawColor(0,0,0); doc.line(65,y,145,y);
   doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.text('FIRMA TRABAJADOR',105,y+5,{align:'center'});
   finish(doc, `RG-GD-01-REGISTRO-ENTREGA-EPP-${record.id || 'registro'}.pdf`, title);
@@ -239,11 +244,15 @@ export function generateRiohsPdf(record){
   cell(doc,28,y+5,164,8,safe(record.correoDestino || record.correo),{bold:false,size:8.5}); y+=25;
   const p3='Asumo mi responsabilidad de dar lectura a su contenido y cumplir con las obligaciones, prohibiciones, normas de orden, higiene y seguridad que en el están escritas, como así también las disposiciones y procedimientos que en forma posterior se emitan y/o modifiquen y que formen parte de este reglamento o que expresamente lo indique.';
   y = paragraph(doc, p3, 18, y, 174, { size:10.2, align:'center', lineH:4.8 }) + 14;
-  const rows=[['NOMBRE COMPLETO',record.trabajador],['RUT',record.rut],['CARGO',record.cargo],['FECHA DE ENTREGA',formatDate(record.fecha)],['FIRMA','']];
-  rows.forEach(([l,v],i)=>{ const yy=y+i*7; cell(doc,28,yy,44,7,l,{red:true,size:8.8}); cell(doc,72,yy,120,7,v,{bold:false,size:8.5}); if(l==='FIRMA') signatureInCell(doc, record.firma, 72, yy, 120, 7); });
-  y += rows.length*7 + 28;
-  cell(doc,60,y,30,8,'NOMBRE DIFUSOR',{bold:false,size:8}); cell(doc,90,y,82,8,empresa.prevencionista,{bold:false,size:8});
-  cell(doc,60,y+8,30,8,'FIRMA Y TIMBRE',{bold:false,size:8}); cell(doc,90,y+8,82,8,'',{bold:false,size:8});
+  const rows=[['NOMBRE COMPLETO',record.trabajador],['RUT',record.rut],['CARGO',record.cargo],['FECHA DE ENTREGA',formatDate(record.fecha)]];
+  rows.forEach(([l,v],i)=>{ const yy=y+i*7; cell(doc,28,yy,54,7,l,{red:true,size:8.8}); cell(doc,82,yy,110,7,v,{bold:false,size:8.5}); });
+  const sigY = y + rows.length*7;
+  cell(doc,28,sigY,54,14,'FIRMA',{red:true,size:8.8});
+  cell(doc,82,sigY,110,14,'',{bold:false,size:8.5});
+  signatureInCell(doc, record.firma, 82, sigY, 110, 14, { scale:1.8, dy:-5 });
+  y = sigY + 14 + 25;
+  cell(doc,60,y,34,9,'NOMBRE DIFUSOR',{bold:false,size:8}); cell(doc,94,y,78,9,empresa.prevencionista,{bold:false,size:8});
+  cell(doc,60,y+9,34,9,'FIRMA Y TIMBRE',{bold:false,size:8}); cell(doc,94,y+9,78,9,'',{bold:false,size:8});
   finish(doc, `RG-GD-03-REGISTRO-ENTREGA-RIOHS-${record.id || 'registro'}.pdf`, title);
 }
 
@@ -251,7 +260,7 @@ function genericRecordPdf(title, record){
   const doc = new jsPDF({ unit:'mm', format:'a4' }); const code=record.trazabilidad || traceCode('REG'); header(doc, title, 1, 1); let y=48;
   doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text(empresa.razonSocial, 14, y); y+=7;
   Object.entries(record).filter(([k])=>!['firma','asistentesFirmas'].includes(k)).forEach(([k,v])=>{ cell(doc,14,y,45,8,k.toUpperCase(),{red:true,size:8}); cell(doc,59,y,137,8,Array.isArray(v)?`${v.length} items`:safe(v),{bold:false,size:8}); y+=8; if(y>265){ doc.addPage(); header(doc,title,1,1); y=48; } });
-  const img=signatureImage(record.firma); if(img){ doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('FIRMA DIGITAL SIMPLE',14,y+5); signatureInCell(doc, record.firma, 70, y, 70, 20); doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.text(formatDateTime(signatureTime(record.firma)),145,y+12); }
+  const img=signatureImage(record.firma); if(img){ doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('FIRMA DIGITAL SIMPLE',14,y+5); signatureInCell(doc, record.firma, 70, y, 70, 20, { scale:1.7, dy:-5 }); doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.text(formatDateTime(signatureTime(record.firma)),145,y+12); }
   finish(doc, `${title}-${record.id || 'registro'}.pdf`, title);
 }
 
