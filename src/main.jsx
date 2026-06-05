@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import './styles.css';
+import './signature-mobile.css';
 import { saveOnlineState, hasDatabase } from './lib/onlineStore.js';
 import { installSupabaseSetupPanel } from './lib/supabaseSetupPanel.js';
 
@@ -10,9 +11,10 @@ const root = document.getElementById('root');
 function installMobileZoomLock() {
   let lastTouchEnd = 0;
 
-  document.addEventListener('gesturestart', (event) => event.preventDefault(), { passive: false });
-  document.addEventListener('gesturechange', (event) => event.preventDefault(), { passive: false });
-  document.addEventListener('gestureend', (event) => event.preventDefault(), { passive: false });
+  const prevent = (event) => event.preventDefault();
+  document.addEventListener('gesturestart', prevent, { passive: false });
+  document.addEventListener('gesturechange', prevent, { passive: false });
+  document.addEventListener('gestureend', prevent, { passive: false });
 
   document.addEventListener('touchmove', (event) => {
     if (event.touches && event.touches.length > 1) event.preventDefault();
@@ -26,6 +28,11 @@ function installMobileZoomLock() {
 
   document.addEventListener('wheel', (event) => {
     if (event.ctrlKey) event.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('keydown', (event) => {
+    const isZoomKey = event.ctrlKey && ['+', '-', '=', '0'].includes(event.key);
+    if (isZoomKey) event.preventDefault();
   }, { passive: false });
 }
 
