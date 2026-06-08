@@ -5,6 +5,7 @@ import './styles.css';
 import './signature-mobile.css';
 import { saveOnlineState, hasDatabase } from './lib/onlineStore.js';
 import { installSupabaseSetupPanel } from './lib/supabaseSetupPanel.js';
+import { installEppInventoryButton } from './lib/eppInventoryButton.js';
 
 const root = document.getElementById('root');
 
@@ -58,4 +59,5 @@ window.__SEGAV_SYNC_SUPABASE__ = async (appData) => {
 
 setTimeout(() => {
   installSupabaseSetupPanel();
+  installEppInventoryButton();
 }, 500);
