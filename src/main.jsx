@@ -6,6 +6,7 @@ import './signature-mobile.css';
 import { saveOnlineState, hasDatabase } from './lib/onlineStore.js';
 import { installSupabaseSetupPanel } from './lib/supabaseSetupPanel.js';
 import { installEppInventoryButton } from './lib/eppInventoryButton.js';
+import { installContractsAnexosModule } from './lib/contractsAnexosModule.js';
 
 const root = document.getElementById('root');
 
@@ -60,4 +61,5 @@ window.__SEGAV_SYNC_SUPABASE__ = async (appData) => {
 setTimeout(() => {
   installSupabaseSetupPanel();
   installEppInventoryButton();
+  installContractsAnexosModule();
 }, 500);
