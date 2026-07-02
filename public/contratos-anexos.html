@@ -1120,8 +1120,10 @@
       const contratoSigned = hasRepElectronicSignature("contrato");
       const anexoLocal = hasLocalFesAcceptance("anexo");
       const contratoLocal = hasLocalFesAcceptance("contrato");
-      if(q("btnSmartAnexo")) q("btnSmartAnexo").textContent = !anexoSigned ? "Firmar documento" : (anexoLocal ? "Guardar documento firmado" : "Enviar para firma");
-      if(q("btnSmartContrato")) q("btnSmartContrato").textContent = !contratoSigned ? "Firmar documento" : (contratoLocal ? "Guardar documento firmado" : "Enviar para firma");
+      const c = company();
+      const hasRemote = !!(c.remoteApiUrl && c.remoteApiKey);
+      if(q("btnSmartAnexo")) q("btnSmartAnexo").textContent = !anexoSigned ? "Firmar documento" : (anexoLocal ? "Guardar documento firmado" : (hasRemote ? "Enviar para firma" : "Preparar correo"));
+      if(q("btnSmartContrato")) q("btnSmartContrato").textContent = !contratoSigned ? "Firmar documento" : (contratoLocal ? "Guardar documento firmado" : (hasRemote ? "Enviar para firma" : "Preparar correo"));
     }
 
     async function smartSignatureAction(tipo){
@@ -1366,7 +1368,11 @@
       if(tipo==="anexo"){if(!validateAnexo())return;} else {if(!validateContrato())return;}
       const d=tipo==="anexo"?getAnexo():getContrato();
       if(!d.emailTrabajador){statusMsg(statusId,"Firma remota: falta correo del trabajador.","error");return;}
-      if(!c.remoteApiUrl||!c.remoteApiKey){statusMsg(statusId,"Firma remota: configura URL backend y clave API en Configuración empresa.","error");return;}
+      if(!c.remoteApiUrl||!c.remoteApiKey){
+        statusMsg(statusId,"No hay backend de firma remota configurado. Se preparará un correo para enviar el documento al trabajador.","ok");
+        prepareEmail(tipo);
+        return;
+      }
       try{statusMsg(statusId,"Enviando solicitud de firma remota..."); const api=c.remoteApiUrl.replace(/\/+$/,'');
         const res=await fetch(api+"/api/document-requests",{method:"POST",headers:{"Content-Type":"application/json","X-API-Key":c.remoteApiKey},body:JSON.stringify(remotePayload(tipo))});
         const data=await res.json().catch(()=>({})); if(!res.ok) throw new Error(data.error||"No se pudo crear la solicitud.");
