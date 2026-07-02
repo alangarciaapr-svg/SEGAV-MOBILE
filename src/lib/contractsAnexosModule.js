@@ -29,11 +29,11 @@ function buildModule() {
         </div>
       </div>
       <div id="segav-contracts-status" class="rounded-2xl bg-slate-50 p-3 text-sm text-slate-600" style="margin-top:14px;">
-        Fase 1: módulo fusionado en la app. Si el archivo <b>contratos-anexos.html</b> existe en /public, se carga automáticamente. También puedes cargar el HTML v29 una vez y quedará guardado localmente en este navegador.
+        Generador fijo cargado desde <b>/contratos-anexos.html</b>. El botón de carga manual queda disponible solo como respaldo.
       </div>
     </section>
-    <section class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm app-card" style="height:calc(100vh - 250px);min-height:620px;overflow:hidden;">
-      <iframe id="segav-contracts-frame" title="Generador de contratos y anexos" src="${STATIC_GENERATOR_URL}" style="width:100%;height:100%;border:0;border-radius:22px;background:#fff;"></iframe>
+    <section class="rounded-3xl border border-slate-200 bg-white p-2 shadow-sm app-card" style="height:calc(100vh - 235px);min-height:700px;overflow:hidden;">
+      <iframe id="segav-contracts-frame" title="Generador de contratos y anexos" src="${STATIC_GENERATOR_URL}" style="width:100%;height:100%;border:0;border-radius:22px;background:#0b1220;"></iframe>
     </section>
   `;
 
@@ -59,16 +59,10 @@ function bindModuleEvents(module) {
   const openStatic = module.querySelector('#segav-contracts-open-static');
   const loadLocal = module.querySelector('#segav-contracts-load-local');
 
-  const localHtml = localStorage.getItem(STORAGE_KEY);
-  if (localHtml) {
-    frame.srcdoc = localHtml;
-    status.innerHTML = 'Generador v29 cargado desde almacenamiento local de este navegador.';
-  }
-
   openStatic?.addEventListener('click', () => {
     frame.removeAttribute('srcdoc');
     frame.src = STATIC_GENERATOR_URL;
-    status.innerHTML = 'Abriendo <b>/contratos-anexos.html</b>. Si aparece error, carga el HTML v29 con el botón “Cargar HTML v29”.';
+    status.innerHTML = 'Generador fijo cargado desde <b>/contratos-anexos.html</b>.';
   });
 
   loadLocal?.addEventListener('click', () => fileInput?.click());
@@ -123,13 +117,16 @@ function exitContractsModule() {
 function installSideNav() {
   const sideNav = document.querySelector('aside nav');
   if (!sideNav || document.getElementById(NAV_ID)) return;
+  sideNav.style.maxHeight = 'calc(100vh - 128px)';
+  sideNav.style.overflowY = 'auto';
+  sideNav.style.paddingRight = '4px';
   const btn = document.createElement('button');
   btn.id = NAV_ID;
   btn.type = 'button';
   btn.className = 'w-full rounded-2xl px-3 py-2 text-left text-sm font-bold hover:bg-slate-100';
   btn.textContent = 'Contratos y Anexos';
   btn.addEventListener('click', showContractsModule);
-  sideNav.appendChild(btn);
+  sideNav.insertBefore(btn, sideNav.children[1] || null);
 }
 
 function installMobileOption() {

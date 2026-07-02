@@ -1,26 +1,1338 @@
 <!doctype html>
-<html lang="es-CL">
+<html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Contratos y Anexos - SEGAV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generador de Anexos y Contratos - v18 Modular</title>
   <style>
-    :root{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#0f172a;background:#f8fafc}
-    body{margin:0;min-height:100vh;display:grid;place-items:center;background:linear-gradient(180deg,#f8fafc,#eef2f7)}
-    .card{max-width:760px;margin:24px;padding:28px;border-radius:28px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 18px 48px rgba(15,23,42,.12)}
-    h1{margin:0 0 10px;font-size:28px;line-height:1.1}p{color:#475569;line-height:1.55}.pill{display:inline-block;background:#ccfbf1;color:#0f766e;border-radius:999px;padding:7px 12px;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.08em}.box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:16px;margin-top:18px}.name{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#0f172a;color:#fff;border-radius:12px;padding:10px;overflow:auto}button{border:0;border-radius:18px;padding:12px 16px;font-weight:900;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;cursor:pointer;margin-top:12px}
-  </style>
+    :root{
+      --bg:#0b1220;--card:#111b2e;--card2:#0f1a2e;--muted:#93a4c7;--text:#e7efff;
+      --border:#223050;--danger:#ff5c7a;--ok:#7CFFB2;--accent:#4ea1ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#070b14);color:var(--text)}
+    .wrap{max-width:1260px;margin:0 auto;padding:22px 16px 44px}
+    h1{font-size:22px;margin:0 0 6px;letter-spacing:.2px}
+    .lead{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .pill{display:inline-flex;margin-left:8px;font-size:12px;color:#cfe0ff;background:rgba(78,161,255,.12);border:1px solid rgba(78,161,255,.25);padding:4px 10px;border-radius:999px}
+    .nav{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px}
+    button{background:linear-gradient(180deg,#4ea1ff,#2f7fe0);border:none;color:#06101f;padding:11px 14px;font-weight:800;border-radius:14px;cursor:pointer;font-size:14px}
+    button.secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
+    button.danger{background:transparent;border:1px solid rgba(255,92,122,.5);color:#ff9db0}
+    .nav button{padding:9px 13px;border-radius:999px;background:transparent;color:var(--text);border:1px solid var(--border)}
+    .nav button.active{background:linear-gradient(180deg,#4ea1ff,#2f7fe0);color:#06101f;border-color:transparent}
+    .module{display:none}
+    .module.active{display:block}
+    .home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    @media(max-width:900px){.home-grid{grid-template-columns:1fr}}
+    .home-card,.card{background:rgba(17,27,46,.92);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .home-card{padding:18px}
+    .home-card h3{margin:0 0 8px;font-size:18px}
+    .home-card p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .grid{display:grid;grid-template-columns:470px 1fr;gap:14px;align-items:start}
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+    .card h2{font-size:13px;margin:0 0 10px;color:#cfe0ff;letter-spacing:.25px;text-transform:uppercase}
+    .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
+    .col-12{grid-column:span 12}.col-8{grid-column:span 8}.col-6{grid-column:span 6}.col-4{grid-column:span 4}
+    @media(max-width:560px){.col-8,.col-6,.col-4{grid-column:span 12}}
+    .field{display:flex;flex-direction:column;gap:6px}
+    label{font-size:12px;color:#c9d7f5}
+    input,textarea,select{background:#0d1528;border:1px solid var(--border);color:var(--text);padding:10px;border-radius:12px;outline:none;font-size:14px}
+    textarea{min-height:44px;resize:vertical}
+    input:focus,textarea:focus,select:focus{border-color:rgba(78,161,255,.8);box-shadow:0 0 0 3px rgba(78,161,255,.15)}
+    .hint{font-size:12px;color:var(--muted);line-height:1.35;margin-top:6px}
+    .hint.ok{color:var(--ok)}.hint.bad{color:#ff9db0}
+    .status{font-size:13px;color:var(--muted)}.status.error{color:var(--danger)}.status.ok{color:var(--ok)}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+    .divider{height:1px;background:rgba(34,48,80,.75);margin:12px 0}
+    .mini-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .mini-checks label{display:flex;gap:8px;align-items:center;font-size:13px;color:#c9d7f5}
+    @media(max-width:620px){.mini-checks{grid-template-columns:1fr}}
+    .print-note{background:#0d1528;border:1px solid var(--border);padding:10px;border-radius:12px;margin-top:10px;color:#c9d7f5;font-size:12px;line-height:1.4}
+
+    /* Documento Carta */
+    .sheet-wrap{display:flex;justify-content:center;padding:10px}
+    .sheet{width:216mm;min-height:279mm;background:#fff;color:#000;border-radius:0;box-shadow:none;overflow:hidden}
+    .page{padding:25.4mm;font-family:"Times New Roman",Times,serif;font-size:12pt;line-height:1.35;color:#000;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+    .logo{display:none;margin:0 auto 5mm;max-height:20mm;max-width:75mm;object-fit:contain}
+    .logo.show{display:block}
+    .topline{text-align:center;font-weight:700;margin-bottom:6mm;letter-spacing:.2px;color:#000}
+    .title{text-align:center;font-weight:800;text-transform:uppercase;margin:0 0 6mm;letter-spacing:.25px;color:#000}
+    .para,.clause{margin:0 0 5mm;text-align:justify;text-justify:inter-word;color:#000}
+    .clause b{font-weight:800}
+    .sigline{margin-top:12mm;display:grid;grid-template-columns:1fr 1fr;gap:16mm;align-items:start}
+    .sigblock{text-align:center;font-size:11pt;color:#000}
+    .line{border-top:1px solid #000;margin:0 0 3mm}
+    ul.doc-list{margin:0 0 5mm 8mm;color:#000;padding-left:10mm}
+    .doc-hidden{display:none!important}
+
+    @page{size:letter;margin:25.4mm}
+    @media print{
+      body{background:#fff!important}
+      .no-print{display:none!important}
+      .wrap{padding:0!important;max-width:none!important}
+      .module{display:none!important}
+      .module.active{display:block!important}
+      .grid{display:block!important}
+      .card{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important}
+      .sheet-wrap{padding:0!important;justify-content:flex-start!important}
+      .sheet{width:auto!important;min-height:auto!important;background:transparent!important;box-shadow:none!important;border:none!important;overflow:visible!important}
+      .page{padding:0!important}
+      ul,.sigline{break-inside:avoid;page-break-inside:avoid}
+    }
+  
+    .fes-box{background:#0d1528;border:1px solid var(--border);border-radius:12px;padding:10px;margin-top:8px}
+    .fes-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .checklist{background:#0d1528;border:1px solid var(--border);border-radius:12px;padding:10px;margin-top:10px;font-size:12px;color:#c9d7f5;line-height:1.45}
+    .doc-folio{text-align:right;font-size:10.5pt;color:#000;margin-bottom:4mm}
+
+    .signature-modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+    .signature-modal.show{display:flex}
+    .signature-card{background:#111b2e;border:1px solid var(--border);border-radius:18px;padding:16px;width:min(760px,100%);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+    .signature-card h3{margin:0 0 8px}
+    .signature-canvas{width:100%;height:320px;background:#fff;border-radius:14px;touch-action:none;border:1px solid #d7d7d7}
+    .signature-preview{max-width:180px;max-height:64px;display:block;margin:0 auto 3mm}
+    .rep-fes-note{border-top:1px solid #000;padding-top:3mm;margin-top:5mm;font-size:9.5pt;text-align:left;line-height:1.25;color:#000}
+    @media print{.signature-preview{max-width:180px;max-height:64px}.rep-fes-note{break-inside:avoid;page-break-inside:avoid}}
+</style>
 </head>
+
 <body>
-  <main class="card">
-    <span class="pill">Fase 1 integrada</span>
-    <h1>Contratos y Anexos</h1>
-    <p>Este espacio ya está fusionado dentro de SEGAV SST. Para mantener el generador anterior sin perder funciones, carga aquí el HTML v29 desde el botón <b>Cargar HTML v29</b> del módulo principal.</p>
-    <div class="box">
-      <p>Archivo requerido:</p>
-      <div class="name">ANEXOS_contratos_v29_pdf_automatico_copias.html</div>
-      <p>Cuando este archivo se agregue como versión estática del repo, reemplazará automáticamente esta pantalla.</p>
+  <div class="wrap">
+    <div class="no-print">
+      <h1>Generador de Anexos y Contratos <span class="pill">v18 modular real</span></h1>
+      <p class="lead">Cada ventana tiene su propio contenido: Inicio, Anexo, Contrato y Configuración empresa. No se mezclan formularios ni documentos.</p>
+      <div class="nav">
+        <button id="navHome" class="active" type="button">Inicio</button>
+        <button id="navAnexo" type="button">Crear Anexo</button>
+        <button id="navContrato" type="button">Crear Contrato</button>
+        <button id="navConfig" type="button">Configuración empresa</button>
+      </div>
     </div>
-  </main>
+
+    <!-- INICIO -->
+    <section id="moduleHome" class="module active no-print">
+      <div class="home-grid">
+        <div class="home-card">
+          <h3>Crear Anexo</h3>
+          <p>Genera anexos por cambio de faena, horario, sueldo, bono producción o chofer de vehículo de empresa.</p>
+          <button type="button" onclick="setMode('anexo')">Ir a Anexos</button>
+        </div>
+        <div class="home-card">
+          <h3>Crear Contrato</h3>
+          <p>Genera contratos con jornada, maquinaria, bonos, banco, tipo de pago, AFP, salud y duración libre.</p>
+          <button type="button" onclick="setMode('contrato')">Ir a Contratos</button>
+        </div>
+        <div class="home-card">
+          <h3>Configuración Empresa</h3>
+          <p>Guarda razón social, RUT, dirección, representante legal y logo para usar en todos los documentos.</p>
+          <button type="button" onclick="setMode('config')">Ir a Configuración</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIGURACION -->
+    <section id="moduleConfig" class="module no-print">
+      <div class="card">
+        <h2>Configuración empresa</h2>
+        <div class="form-grid">
+          <div class="field col-12">
+            <label for="logoFile">Logo empresa (PNG/JPG)</label>
+            <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" />
+            <div class="hint">Se guarda en este navegador y se usa en Anexos y Contratos.</div>
+          </div>
+
+          <div class="field col-8">
+            <label for="empresaRaz">Razón social / Empresa</label>
+            <input id="empresaRaz" value="Sociedad Maderera Galvez Y DI Génova Ltda" list="empresaList" />
+            <datalist id="empresaList"><option value="Sociedad Maderera Galvez Y DI Génova Ltda"></option></datalist>
+          </div>
+          <div class="field col-4">
+            <label for="rutEmpresa">RUT Empresa</label>
+            <input id="rutEmpresa" placeholder="77.110.060-0" inputmode="text" autocomplete="off" />
+            <div class="hint" id="rutEmpresaHint"></div>
+          </div>
+
+          <div class="field col-8">
+            <label for="domicilioEmp">Domicilio empresa</label>
+            <input id="domicilioEmp" value="Camino Viejo Las Lumas KM 12 Lote 1" />
+          </div>
+          <div class="field col-4">
+            <label for="comunaEmp">Comuna</label>
+            <input id="comunaEmp" value="Osorno" />
+          </div>
+
+          <div class="field col-4">
+            <label for="emailEmp">Correo empresa</label>
+            <input id="emailEmp" />
+          </div>
+          <div class="field col-4">
+            <label for="fonoEmp">Teléfono empresa</label>
+            <input id="fonoEmp" placeholder="+569..." />
+          </div>
+          <div class="field col-4">
+            <label for="ciudad">Ciudad</label>
+            <input id="ciudad" value="OSORNO" />
+          </div>
+          <div class="divider col-12"></div>
+          <div class="field col-6">
+            <label for="remoteApiUrl">URL backend firma remota</label>
+            <input id="remoteApiUrl" placeholder="https://tu-worker.workers.dev" />
+            <div class="hint">Backend que envía links de firma al celular, genera PDF final y devuelve copia a ambas partes.</div>
+          </div>
+          <div class="field col-6">
+            <label for="remoteApiKey">Clave API interna</label>
+            <input id="remoteApiKey" type="password" placeholder="REMOTE_API_KEY" />
+            <div class="hint">Debe ser igual al secreto REMOTE_API_KEY del Worker.</div>
+          </div>
+
+          <div class="field col-6">
+            <label for="rep1Nombre">Representante legal 1</label>
+            <input id="rep1Nombre" list="repList" placeholder="Seleccione o escriba" />
+            <datalist id="repList">
+              <option value="Paola Andrea Di Génova"></option>
+              <option value="Rodrigo Augusto Gálvez Rebolledo"></option>
+            </datalist>
+          </div>
+          <div class="field col-6">
+            <label for="rep1Rut">RUT representante 1</label>
+            <input id="rep1Rut" placeholder="10.518.096-9" inputmode="text" autocomplete="off" />
+            <div class="hint" id="rep1RutHint"></div>
+          </div>
+
+          <div class="field col-6">
+            <label for="rep2Nombre">Representante legal 2</label>
+            <input id="rep2Nombre" list="repList" placeholder="Seleccione o escriba" />
+          </div>
+          <div class="field col-6">
+            <label for="rep2Rut">RUT representante 2</label>
+            <input id="rep2Rut" placeholder="9.698.140-6" inputmode="text" autocomplete="off" />
+            <div class="hint" id="rep2RutHint"></div>
+          </div>
+
+          <div class="field col-12">
+            <label for="repFirma">Representante que firma los documentos</label>
+            <select id="repFirma">
+              <option value="rep1">Representante legal 1</option>
+              <option value="rep2">Representante legal 2</option>
+            </select>
+            <div class="hint">El representante seleccionado se usará automáticamente en contratos y anexos.</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="btnGuardarConfig" type="button">Guardar configuración</button>
+          <button id="btnExportConfig" class="secondary" type="button">Exportar configuración JSON</button>
+          <label class="secondary" style="border:1px solid var(--border);border-radius:14px;padding:10px 12px;cursor:pointer;font-weight:800;">
+            Importar JSON
+            <input id="importConfigFile" type="file" accept="application/json" style="display:none" />
+          </label>
+          <button id="btnCargarDefaults" class="secondary" type="button">Cargar datos base</button>
+          <button id="btnBorrarLogo" class="danger" type="button">Borrar logo</button>
+          <span id="configStatus" class="status"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANEXO -->
+    <section id="moduleAnexo" class="module">
+      <div class="grid">
+        <div class="card no-print">
+          <h2>Crear Anexo</h2>
+          <div class="form-grid">
+            <div class="field col-6">
+              <label for="fechaAnexo">Fecha del anexo</label>
+              <input id="fechaAnexo" type="date" />
+            </div>
+            <div class="field col-6">
+              <label for="folioAnexo">Folio interno Anexo</label>
+              <input id="folioAnexo" placeholder="ANX-2026-001" />
+            </div>
+            <div class="field col-12">
+              <label for="cargoTemplateAnexo">Plantilla por cargo</label>
+              <select id="cargoTemplateAnexo">
+                <option value="">— Seleccionar plantilla —</option>
+                <option value="operador_harvester">Operador Harvester</option>
+                <option value="operador_forwarder">Operador Forwarder</option>
+                <option value="operador_maquinaria">Operador de maquinaria forestal</option>
+                <option value="chofer">Chofer / conductor</option>
+                <option value="motosierrista">Motosierrista</option>
+                <option value="administrativo">Administrativo</option>
+              </select>
+              <div class="hint">Carga cargo y cláusulas sugeridas para el anexo. Todo queda editable.</div>
+            </div>
+            <div class="field col-6">
+              <label for="cargoAnexo">Cargo / Función</label>
+              <input id="cargoAnexo" placeholder="CARGO" />
+            </div>
+            <div class="field col-6">
+              <label for="predio">Predio</label>
+              <input id="predio" placeholder="PREDIO" />
+            </div>
+            <div class="field col-6">
+              <label for="comunaPredio">Comuna (predio)</label>
+              <input id="comunaPredio" placeholder="COMUNA" />
+            </div>
+            <div class="field col-12">
+              <label for="roles">ROL(es) (coma o salto de línea)</label>
+              <textarea id="roles" placeholder="329-325"></textarea>
+            </div>
+
+            <div class="divider col-12"></div>
+
+            <div class="field col-12">
+              <label>Tipo(s) de modificación del Anexo</label>
+              <div class="mini-checks">
+                <label><input type="checkbox" id="anxCambioFaena" checked> Cambio de faena / predio</label>
+                <label><input type="checkbox" id="anxHorario"> Modificación de horario/jornada</label>
+                <label><input type="checkbox" id="anxSueldo"> Modificación de sueldo</label>
+                <label><input type="checkbox" id="anxBonoProduccion"> Bono producción</label>
+                <label><input type="checkbox" id="anxChofer"> Chofer de vehículo de empresa</label>
+              </div>
+              <div class="hint">Puedes marcar uno o varios. Se generan solo las cláusulas seleccionadas.</div>
+            </div>
+
+            <div class="field col-6 anx-horario">
+              <label for="anxJornada">Nueva jornada / distribución</label>
+              <select id="anxJornada">
+                <option value="42 horas semanales distribuidas de lunes a jueves de 08:00 a 17:30 horas y viernes de 08:00 a 17:00 horas, con una hora de colación diaria no imputable a la jornada.">Lunes a Viernes (42 horas: L-J 08:00-17:30 / V 08:00-17:00)</option>
+                <option value="42 horas semanales en promedio, bajo sistema 7x7 (7 días de trabajo por 7 días de descanso), según programación y normativa aplicable.">7x7 (42 horas promedio)</option>
+                <option value="42 horas semanales en promedio, bajo sistema 10x5 (10 días de trabajo por 5 días de descanso), según programación y normativa aplicable.">10x5 (42 horas promedio)</option>
+                <option value="Jornada y distribución según detalle especial indicado en este anexo.">Otra / detalle especial</option>
+              </select>
+              <div class="hint ok" id="anxJornadaLegalHint">Jornada legal vigente: 42 horas semanales. Lunes a jueves 08:00-17:30 y viernes 08:00-17:00, con 1 hora de colación.</div>
+            </div>
+            <div class="field col-6 anx-horario">
+              <label for="anxHorarioDetalle">Detalle especial de horario</label>
+              <input id="anxHorarioDetalle" placeholder="Ej: lunes a jueves 08:00 a 17:30 y viernes 08:00 a 17:00" />
+            </div>
+            <div class="field col-4 anx-horario">
+              <label for="anxHoraInicio">Hora inicio</label>
+              <input id="anxHoraInicio" type="time" value="08:00" />
+            </div>
+            <div class="field col-4 anx-horario">
+              <label for="anxHoraTermino">Hora término</label>
+              <input id="anxHoraTermino" type="time" value="17:30" />
+            </div>
+            <div class="field col-4 anx-horario">
+              <label for="anxColacion">Colación (minutos)</label>
+              <input id="anxColacion" type="number" min="0" step="5" value="30" />
+            </div>
+
+            <div class="field col-6 anx-sueldo">
+              <label for="anxNuevoSueldo">Nuevo sueldo / remuneración</label>
+              <input id="anxNuevoSueldo" placeholder="$800.000" />
+              <div class="hint" id="anxSueldoWordsHint"></div>
+            </div>
+            <div class="field col-6 anx-sueldo">
+              <label for="anxSueldoPeriodicidad">Periodicidad</label>
+              <select id="anxSueldoPeriodicidad">
+                <option value="mensual">Mensual</option>
+                <option value="diaria">Diaria</option>
+                <option value="por trato o producción">Por trato o producción</option>
+              </select>
+            </div>
+
+            <div class="field col-6 anx-bono">
+              <label for="anxBonoMonto">Monto bono producción</label>
+              <input id="anxBonoMonto" placeholder="$50.000" />
+            </div>
+            <div class="field col-6 anx-bono">
+              <label for="anxBonoCondicion">Condición / forma de pago del bono</label>
+              <input id="anxBonoCondicion" placeholder="Ej: según cumplimiento de metas de producción y asistencia" />
+            </div>
+
+            <div class="field col-6 anx-chofer">
+              <label for="anxVehiculoTipo">Tipo de vehículo</label>
+              <input id="anxVehiculoTipo" placeholder="Camioneta / camión / vehículo empresa" />
+            </div>
+            <div class="field col-6 anx-chofer">
+              <label for="anxChoferRestriccion">Restricción de uso</label>
+              <select id="anxChoferRestriccion">
+                <option value="El vehículo deberá utilizarse exclusivamente para fines laborales, quedando prohibido su uso para fines particulares salvo autorización expresa del empleador.">Uso solo laboral</option>
+                <option value="El uso del vehículo quedará sujeto a las instrucciones específicas del empleador, políticas internas y normativa de tránsito vigente.">Según instrucciones del empleador</option>
+              </select>
+            </div>
+
+            <div class="divider col-12"></div>
+
+            <div class="field col-8">
+              <label for="trabNombreAnexo">Nombre trabajador</label>
+              <input id="trabNombreAnexo" placeholder="NOMBRE COMPLETO" />
+            </div>
+            <div class="field col-4">
+              <label for="trabRutAnexo">RUT trabajador</label>
+              <input id="trabRutAnexo" placeholder="12.345.678-5" inputmode="text" autocomplete="off" />
+              <div class="hint" id="trabRutAnexoHint"></div>
+            </div>
+
+            <div class="field col-12">
+              <label for="workerHistoryAnexo">Historial local de trabajadores</label>
+              <div class="fes-row">
+                <select id="workerHistoryAnexo" style="flex:1;min-width:220px;"><option value="">— Trabajadores guardados —</option></select>
+                <button type="button" class="secondary" id="btnLoadWorkerAnexo">Cargar trabajador</button>
+                <button type="button" class="secondary" id="btnSaveWorkerAnexo">Guardar trabajador</button>
+              </div>
+              <div class="hint">Disponible también para anexos. Se guarda solo en este navegador.</div>
+            </div>
+          </div>
+
+          <div class="fes-box">
+            <label for="anxEmailTrabajador">Correo trabajador para envío del Anexo</label>
+            <div class="fes-row">
+              <input id="anxEmailTrabajador" type="email" placeholder="correo@trabajador.cl" style="flex:1;min-width:220px;" />
+              <button type="button" class="secondary" id="btnEmailAnexo">Preparar correo</button>
+            </div>
+            <div class="hint">Abre tu correo con asunto y texto sugerido. Adjunta el PDF generado desde “Guardar copia PDF”. El backend genera PDF final, lo envía a ambas partes y guarda respaldo.</div>
+          </div>
+
+          <div class="fes-box">
+            <label style="display:flex;gap:8px;align-items:center;">
+              <input type="checkbox" id="anxFesEnabled"> Incluir Firma Electrónica Simple (FES) - Ley 19.799
+            </label>
+            <div class="hint">FES simple: aceptación electrónica mediante identificación formal (nombre/RUT), casillas de aceptación y constancia de fecha/hora. No corresponde a Firma Electrónica Avanzada.</div>
+            <div class="fes-row" style="margin-top:8px;">
+              <label><input type="checkbox" id="anxFesTrabajador"> Trabajador acepta firmar electrónicamente</label>
+              <label><input type="checkbox" id="anxFesRepresentante"> Representante acepta firmar electrónicamente</label>
+            </div>
+          </div>
+          <div class="checklist" id="anexoChecklist">Checklist anexo: complete los datos para revisar.</div>
+          <div class="actions">
+            <button type="button" id="btnSmartAnexo">Firmar documento</button>
+            <button type="button" class="secondary" onclick="printCurrent()">Guardar copia PDF</button>
+            <span id="anexoStatus" class="status"></span>
+          </div>
+          <div class="print-note">Acción principal: firma electrónica del representante legal. Luego, si el trabajador no está presente, se envía para firma remota; si ambas partes aceptan FES local, se guarda copia firmada.</div>
+        </div>
+
+        <div class="card">
+          <h2 class="no-print">Vista previa Anexo</h2>
+          <div class="sheet-wrap">
+            <div class="sheet">
+              <div class="page">
+                <div id="docAnexo">
+                  <img id="out_logo_anexo" class="logo" alt="Logo empresa" />
+                  <div class="doc-folio">Folio: <span id="out_folio_anexo">[FOLIO]</span></div>
+                  <div class="topline" id="out_empresaTitulo_anexo">[EMPRESA]</div>
+                  <div class="title">ANEXO CONTRATO DE TRABAJO</div>
+
+                  <div class="para">
+                    En <span id="out_ciudad_anexo">[CIUDAD]</span>, con fecha <span id="out_fecha_anexo">[FECHA]</span>,
+                    se acuerda el presente Anexo de Contrato de Trabajo entre
+                    <b><span id="out_empresaMayus_anexo">[EMPRESA]</span></b>, RUT: <b><span id="out_rutEmpresa_anexo">[RUT EMPRESA]</span></b>,
+                    en adelante el “Empleador”, y don(ña) <b><span id="out_nombre_anexo">[NOMBRE]</span></b>,
+                    cédula de identidad N° <b><span id="out_rutTrab_anexo">[RUT]</span></b>, en adelante el “Trabajador”.
+                  </div>
+
+                  <div class="para">
+                    Las partes dejan constancia que el presente instrumento se suscribe de mutuo acuerdo, por escrito, y tiene por objeto modificar parcialmente el contrato individual de trabajo vigente, manteniéndose inalterables las demás estipulaciones que no sean expresamente modificadas.
+                  </div>
+
+                  <div id="out_anexo_clauses"></div>
+
+                  <div class="para">
+                    Las modificaciones contenidas en este anexo no importan renuncia de derechos laborales ni menoscabo para el trabajador, y comenzarán a regir desde la fecha indicada, salvo que en una cláusula específica se señale otra fecha de vigencia.
+                  </div>
+
+                  <div class="para">
+                    Se deja constancia que el Contrato de Trabajo que dio origen a la relación laboral mantendrá su plena vigencia en todo lo que no sea contrario al presente anexo.
+                  </div>
+
+                  <div id="out_fes_anexo" class="para doc-hidden"></div>
+                  <div class="para">En señal de conformidad, firman las partes.</div>
+
+                  <div class="sigline">
+                    <div class="sigblock">
+                      <img id="out_rep_signature_anexo" class="signature-preview doc-hidden" alt="Firma representante legal" />
+                      <div class="line"></div>
+                      <div><b><span id="out_empresaMayus2_anexo">[EMPRESA]</span></b></div>
+                      <div>Rep. Legal: <span id="out_rep_firma_anexo">[REPRESENTANTE]</span></div>
+                    </div>
+                    <div class="sigblock">
+                      <div class="line"></div>
+                      <div><b><span id="out_nombre2_anexo">[NOMBRE]</span></b></div>
+                      <div>C.I. <span id="out_rutTrab2_anexo">[RUT]</span></div>
+                    </div>
+                  </div>
+
+                  <div id="out_rep_fes_anexo" class="rep-fes-note doc-hidden"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hint no-print">Esta ventana es solo Anexos.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTRATO -->
+    <section id="moduleContrato" class="module">
+      <div class="grid">
+        <div class="card no-print">
+          <h2>Crear Contrato</h2>
+          <div class="form-grid">
+            <div class="field col-4"><label for="fechaContrato">Fecha del contrato</label><input id="fechaContrato" type="date" /></div>
+            <div class="field col-4"><label for="fechaIngreso">Fecha de ingreso</label><input id="fechaIngreso" type="date" /></div>
+            <div class="field col-4"><label for="folioContrato">Folio interno Contrato</label><input id="folioContrato" placeholder="CTR-2026-001" /></div>
+
+            <div class="divider col-12"></div>
+
+            <div class="field col-8"><label for="trabNombre">Nombre trabajador</label><input id="trabNombre" placeholder="NOMBRE COMPLETO" /></div>
+            <div class="field col-4"><label for="trabRut">RUT trabajador</label><input id="trabRut" placeholder="12.345.678-5" inputmode="text" autocomplete="off" /><div class="hint" id="trabRutHint"></div></div>
+            <div class="field col-12">
+              <label for="workerHistory">Historial local de trabajadores</label>
+              <div class="fes-row">
+                <select id="workerHistory" style="flex:1;min-width:220px;"><option value="">— Trabajadores guardados —</option></select>
+                <button type="button" class="secondary" id="btnLoadWorker">Cargar trabajador</button>
+                <button type="button" class="secondary" id="btnSaveWorker">Guardar trabajador</button>
+              </div>
+              <div class="hint">Se guarda solo en este navegador: nombre, RUT, domicilio, salud, AFP, cargo y sueldo.</div>
+            </div>
+            <div class="field col-4"><label for="trabNac">Nacionalidad</label><input id="trabNac" value="Chilena" /></div>
+            <div class="field col-4"><label for="trabNacido">Fecha nacimiento</label><input id="trabNacido" type="date" /></div>
+            <div class="field col-4"><label for="trabEstado">Estado civil</label><input id="trabEstado" placeholder="Soltero/a" /></div>
+            <div class="field col-12"><label for="trabDom">Domicilio trabajador</label><input id="trabDom" placeholder="Dirección completa, comuna/ciudad" /></div>
+
+            <div class="divider col-12"></div>
+
+            <div class="field col-12">
+              <label for="cargoTemplate">Plantilla por cargo</label>
+              <select id="cargoTemplate">
+                <option value="">— Seleccionar plantilla —</option>
+                <option value="operador_harvester">Operador Harvester</option>
+                <option value="operador_forwarder">Operador Forwarder</option>
+                <option value="operador_maquinaria">Operador de maquinaria forestal</option>
+                <option value="chofer">Chofer / conductor</option>
+                <option value="motosierrista">Motosierrista</option>
+                <option value="administrativo">Administrativo</option>
+              </select>
+              <div class="hint">Carga cargo, funciones y maquinaria sugerida. Todo queda editable.</div>
+            </div>
+            <div class="field col-12"><label for="cargoContrato">Cargo / Función</label><input id="cargoContrato" placeholder="Operador de Maquinaria forestal" /></div>
+            <div class="field col-12">
+              <label>Cláusulas adicionales</label>
+              <div class="mini-checks">
+                <label><input type="checkbox" id="incluyeConduccion" checked> Incluir conducción y traslados</label>
+                <label><input type="checkbox" id="incluyeMantencion" checked> Incluir mantención básica/aseo</label>
+              </div>
+            </div>
+            <div class="field col-12"><label for="lugarTrabajo">Lugar de trabajo / Planta / Faena</label><input id="lugarTrabajo" value="Planta Las Lumas" /></div>
+
+            <div class="field col-12">
+              <label>Maquinarias a utilizar</label>
+              <div class="mini-checks">
+                <label><input type="checkbox" class="machOpt" value="Harvester"> Harvester</label>
+                <label><input type="checkbox" class="machOpt" value="Forwarder"> Forwarder</label>
+                <label><input type="checkbox" class="machOpt" value="Excavadora con cabezal forestal"> Excavadora con cabezal forestal</label>
+                <label><input type="checkbox" class="machOpt" value="Skidder"> Skidder</label>
+                <label><input type="checkbox" class="machOpt" value="Camión"> Camión</label>
+                <label><input type="checkbox" class="machOpt" value="Camión grúa"> Camión grúa</label>
+                <label><input type="checkbox" class="machOpt" value="Excavadora"> Excavadora</label>
+                <label><input type="checkbox" class="machOpt" value="Otro"> Otro</label>
+              </div>
+            </div>
+            <div class="field col-12"><label for="machOtro">Otro equipo</label><input id="machOtro" placeholder="Ej: Harvester Ponsse H7" /></div>
+            <div class="field col-12"><label for="maquinarias">Modelos/adicionales (una por línea)</label><textarea id="maquinarias" placeholder="Modelos o equipos adicionales"></textarea></div>
+
+            <div class="field col-12">
+              <label for="jornada">Jornada legal vigente</label>
+              <select id="jornada">
+                <option value="42 horas semanales distribuidas de lunes a jueves de 08:00 a 17:30 horas y viernes de 08:00 a 17:00 horas, con una hora de colación diaria no imputable a la jornada.">Lunes a Viernes (42 horas: L-J 08:00-17:30 / V 08:00-17:00)</option>
+                <option value="42 horas semanales en promedio, bajo sistema 7x7 (7 días de trabajo por 7 días de descanso), según programación y normativa aplicable.">7x7 (42 horas promedio)</option>
+                <option value="42 horas semanales en promedio, bajo sistema 10x5 (10 días de trabajo por 5 días de descanso), según programación y normativa aplicable.">10x5 (42 horas promedio)</option>
+              </select>
+              <div class="hint ok" id="contratoJornadaLegalHint">Jornada legal vigente: 42 horas semanales. Lunes a jueves 08:00-17:30 y viernes 08:00-17:00, con 1 hora de colación.</div>
+            </div>
+            <div class="field col-4"><label for="horaInicio">Hora inicio</label><input id="horaInicio" type="time" value="08:00" /></div>
+            <div class="field col-4"><label for="horaTermino">Hora término</label><input id="horaTermino" type="time" value="17:30" /></div>
+            <div class="field col-4"><label for="colacionMin">Colación (minutos)</label><input id="colacionMin" type="number" min="0" step="5" value="30" /></div>
+
+            <div class="divider col-12"></div>
+
+            <div class="field col-12">
+              <label for="gratificacion">Gratificación legal</label>
+              <select id="gratificacion">
+                <option value="Incluye gratificación legal conforme a los artículos 47 y siguientes del Código del Trabajo, pagada bajo modalidad del artículo 50 (25% de lo devengado con tope legal).">Incluida (Art. 50)</option>
+                <option value="">No especificar en cláusula</option>
+              </select>
+            </div>
+            <div class="field col-6"><label for="sueldo">Remuneración</label><input id="sueldo" value="$800.000" /><div class="hint" id="sueldoWordsHint"></div></div>
+            <div class="field col-6"><label for="bonoProduccion">Bono producción</label><input id="bonoProduccion" placeholder="$50.000" /></div>
+            <div class="field col-6"><label for="bonoColacion">Bono colación</label><input id="bonoColacion" placeholder="$50.000" /></div>
+            <div class="field col-6"><label for="bonoMovilizacion">Bono movilización</label><input id="bonoMovilizacion" placeholder="$50.000" /></div>
+            <div class="field col-12"><label for="pagoExtra">Otros bonos/asignaciones</label><input id="pagoExtra" placeholder="Ej: Viático $___ / Bono responsabilidad $___" /></div>
+
+            <div class="divider col-12"></div>
+
+            <div class="field col-6">
+              <label for="bancoPago">Banco</label>
+              <select id="bancoPago">
+                <option value="">—</option><option value="Banco de Chile">Banco de Chile</option><option value="Banco del Estado de Chile (BancoEstado)">BancoEstado</option><option value="Banco Santander-Chile">Santander</option><option value="Banco de Crédito e Inversiones (BCI)">BCI</option><option value="Scotiabank Chile">Scotiabank</option><option value="Banco Itaú Chile">Itaú</option><option value="Banco Internacional">Banco Internacional</option><option value="Banco Bice">Bice</option><option value="Banco Security">Security</option><option value="Banco Falabella">Falabella</option><option value="Banco Ripley">Ripley</option><option value="Banco Consorcio">Consorcio</option><option value="Banco BTG Pactual Chile">BTG Pactual</option>
+              </select>
+            </div>
+            <div class="field col-6"><label for="tipoCuenta">Tipo de cuenta</label><select id="tipoCuenta"><option value="">—</option><option value="Cuenta Corriente">Cuenta Corriente</option><option value="Cuenta Vista">Cuenta Vista</option><option value="Cuenta RUT">Cuenta RUT</option><option value="Cuenta de Ahorro">Cuenta de Ahorro</option></select></div>
+            <div class="field col-6"><label for="numeroCuenta">Número de cuenta</label><input id="numeroCuenta" placeholder="Ej: 4300669002" inputmode="numeric" /></div>
+            <div class="field col-6"><label for="tipoPago">Tipo de pago</label><select id="tipoPago"><option value="">—</option><option value="Transferencia electrónica">Transferencia electrónica</option><option value="Depósito bancario">Depósito bancario</option><option value="Efectivo">Efectivo</option><option value="Cheque">Cheque</option></select></div>
+            <div class="field col-6"><label for="diaPago">Fecha / regla de pago</label><select id="diaPago"><option value="A más tardar dentro de los 5 días hábiles del mes siguiente al mes vencido.">Hasta 5 días hábiles</option><option value="Día 15 del mes siguiente al mes vencido.">Día 15 del mes siguiente</option></select></div>
+            <div class="field col-6">
+              <label for="tipoContrato">Duración / Tipo contrato</label>
+              <select id="tipoContrato">
+                <option value="Plazo fijo de 1 mes a partir de la fecha de este contrato.">Plazo fijo 1 mes</option>
+                <option value="Plazo fijo de 2 meses a partir de la fecha de este contrato.">Plazo fijo 2 meses</option>
+                <option value="Plazo fijo de 3 meses a partir de la fecha de este contrato.">Plazo fijo 3 meses</option>
+                <option value="Por término de obra o faena, según necesidad del servicio.">Por término de obra o faena</option>
+                <option value="Indefinido.">Indefinido</option>
+                <option value="__custom__">Plazo fijo (ingresar duración libre)</option>
+              </select>
+            </div>
+            <div class="field col-6" id="duracionLibreWrap" style="display:none"><label for="duracionLibre">Duración libre</label><input id="duracionLibre" placeholder="Ej: 5 días" /></div>
+            <div class="field col-6"><label for="salud">Salud</label><select id="salud"><option value="Fonasa">Fonasa</option><option value="Isapre">Isapre</option></select></div>
+            <div class="field col-6"><label for="afp">AFP</label><select id="afp"><option value="">—</option><option value="Capital">Capital</option><option value="Cuprum">Cuprum</option><option value="Habitat">Habitat</option><option value="Modelo">Modelo</option><option value="PlanVital">PlanVital</option><option value="Provida">Provida</option><option value="Uno">Uno</option></select></div>
+          </div>
+
+          <div class="fes-box">
+            <label for="ctrEmailTrabajador">Correo trabajador para envío del Contrato</label>
+            <div class="fes-row">
+              <input id="ctrEmailTrabajador" type="email" placeholder="correo@trabajador.cl" style="flex:1;min-width:220px;" />
+              <button type="button" class="secondary" id="btnEmailContrato">Preparar correo</button>
+            </div>
+            <div class="hint">Abre tu correo con asunto y texto sugerido. Adjunta el PDF generado desde “Guardar copia PDF”. El backend genera PDF final, lo envía a ambas partes y guarda respaldo.</div>
+          </div>
+
+          <div class="fes-box">
+            <label style="display:flex;gap:8px;align-items:center;">
+              <input type="checkbox" id="ctrFesEnabled"> Incluir Firma Electrónica Simple (FES) - Ley 19.799
+            </label>
+            <div class="hint">FES simple: aceptación electrónica mediante identificación formal (nombre/RUT), casillas de aceptación y constancia de fecha/hora. No corresponde a Firma Electrónica Avanzada.</div>
+            <div class="fes-row" style="margin-top:8px;">
+              <label><input type="checkbox" id="ctrFesTrabajador"> Trabajador acepta firmar electrónicamente</label>
+              <label><input type="checkbox" id="ctrFesRepresentante"> Representante acepta firmar electrónicamente</label>
+            </div>
+          </div>
+          <div class="checklist" id="contratoChecklist">Checklist contrato: complete los datos para revisar.</div>
+          <div class="actions">
+            <button type="button" id="btnSmartContrato">Firmar documento</button>
+            <button type="button" class="secondary" onclick="printCurrent()">Guardar copia PDF</button>
+            <span id="contratoStatus" class="status"></span>
+          </div>
+          <div class="print-note">Acción principal: firma electrónica del representante legal. Luego, si el trabajador no está presente, se envía para firma remota; si ambas partes aceptan FES local, se guarda copia firmada.</div>
+        </div>
+
+        <div class="card">
+          <h2 class="no-print">Vista previa Contrato</h2>
+          <div class="sheet-wrap"><div class="sheet"><div class="page">
+            <div id="docContrato">
+              <img id="out_logo_cont" class="logo" alt="Logo empresa" />
+              <div class="doc-folio">Folio: <span id="out_folio_cont">[FOLIO]</span></div>
+              <div class="title">CONTRATO DE TRABAJO</div>
+
+              <div class="para">
+                En la ciudad de <b><span id="out_ciudad_cont">[CIUDAD]</span></b>, a <span id="out_fecha_cont">[FECHA]</span>, entre la empresa
+                <b><span id="out_empresaRaz2_cont">[EMPRESA]</span></b>, RUT <b><span id="out_rutEmpresa_cont">[RUT EMPRESA]</span></b>,
+                con domicilio en <span id="out_domEmp_cont">[DOMICILIO]</span>, comuna de <span id="out_comunaEmp_cont">[COMUNA]</span>,
+                representado por <b><span id="out_rep_cont">[REPRESENTANTE]</span></b>, se ha convenido el siguiente contrato de trabajo.
+              </div>
+
+              <div class="para">
+                El Trabajador es don(ña) <b><span id="out_trabNombre_full_cont">[NOMBRE]</span></b>, de nacionalidad <span id="out_trabNac_cont">[NACIONALIDAD]</span>,
+                nacido(a) el <span id="out_trabNacido_cont">[NACIMIENTO]</span>, estado civil <span id="out_trabEstado_cont">[ESTADO CIVIL]</span>,
+                domiciliado(a) en <span id="out_trabDom_cont">[DOMICILIO TRAB]</span>, RUT <b><span id="out_trabRut_cont">[RUT]</span></b>.
+              </div>
+
+              <div class="clause"><b>PRIMERO (Naturaleza de los servicios y lugar):</b> El trabajador se compromete a desarrollar las labores de <b><span id="out_cargo_cont">[CARGO]</span></b>, en <b><span id="out_lugar_cont">[LUGAR]</span></b>, pudiendo ser destinado a distintos lugares donde el empleador preste servicios, sin menoscabo. Podrá operar maquinaria tales como:</div>
+              <div class="para" style="margin-left:8mm;"><span id="out_maquinarias_cont">[MAQUINARIAS]</span></div>
+
+              <div id="secConduccion" class="para">El trabajador se compromete a desarrollar labores de conductor de vehículo para fines laborales tales como traslado de personal, combustibles, lubricantes, repuestos, herramientas, técnicos o personal administrativo autorizado.</div>
+              <div id="secMantencion" class="para">El trabajador se compromete a realizar labores de mantención básica del equipo a su cargo, aseo de cabina/exterior, engrase, revisión de niveles y apoyo en reparaciones.</div>
+
+              <div class="clause"><b>SEGUNDO (Jornada):</b> La jornada será de <span id="out_jornada_cont">[JORNADA]</span><span id="out_horario_comp_cont"></span>.</div>
+              <div class="clause"><b>TERCERO (Remuneración):</b> El empleador remunerará al trabajador con <span id="out_sueldo_cont">[SUELDO]</span><span id="out_sueldo_words_cont"></span><span id="out_pagosExtra_cont"></span>. <span id="out_gratificacion_cont"></span></div>
+              <div class="para">Las remuneraciones se pagarán mensualmente, por período vencido, <span id="out_diaPago_cont">[DÍA PAGO]</span>, mediante <span id="out_tipoPago_cont">[TIPO PAGO]</span> en <span id="out_banco_cont">[BANCO]</span>, <span id="out_tipoCuenta_cont">[TIPO CUENTA]</span> Nº <span id="out_numCuenta_cont">[NÚMERO CUENTA]</span>.</div>
+              <div class="clause"><b>CUARTO (Duración):</b> El presente contrato tiene duración <span id="out_tipoContrato_cont">[DURACIÓN]</span>.</div>
+              <div class="clause"><b>QUINTO (Afiliaciones):</b> El trabajador declara encontrarse afiliado al sistema de salud <b><span id="out_salud_cont">[SALUD]</span></b> y AFP <b><span id="out_afp_cont">[AFP]</span></b>.</div>
+              <div class="clause"><b>SEXTO (Reglamento Interno):</b> El trabajador declara recibir y conocer el Reglamento Interno de Orden, Higiene y Seguridad (RIOHS), obligándose a su cumplimiento.</div>
+              <div class="clause"><b>SEPTIMO (Copias):</b> El presente contrato se firma en dos ejemplares de igual tenor, quedando uno en poder del trabajador y otro del empleador.</div>
+              <div class="clause"><b>OCTAVO (Ingreso):</b> El trabajador ingresa a la empresa con fecha <b><span id="out_ingreso_cont">[INGRESO]</span></b>.</div>
+              <div class="clause"><b>NOVENO (Higiene y Seguridad):</b> El trabajador se obliga a cumplir las instrucciones de seguridad, utilizar correctamente los EPP y reportar incidentes/condiciones inseguras, colaborando con medidas preventivas del empleador y organismo administrador Ley N° 16.744.</div>
+              <div class="clause"><b>DECIMO (Protección de Datos Personales):</b> El empleador tratará datos personales del trabajador para fines de la relación laboral, conforme a la normativa aplicable.</div>
+
+              <div id="out_fes_cont" class="para doc-hidden"></div>
+              <div class="sigline">
+                <div class="sigblock"><div class="line"></div><div><b><span id="out_trabNombre2_cont">[NOMBRE]</span></b></div><div>RUT <span id="out_trabRut2_cont">[RUT]</span></div><div>Trabajador</div></div>
+                <div class="sigblock"><img id="out_rep_signature_cont" class="signature-preview doc-hidden" alt="Firma representante legal" /><div class="line"></div><div><b><span id="out_empresaRaz3_cont">[EMPRESA]</span></b></div><div><span id="out_rep_firma_cont">[REPRESENTANTE]</span></div><div>Representante Legal</div></div>
+              </div>
+
+              <div id="out_rep_fes_cont" class="rep-fes-note doc-hidden"></div>
+            </div>
+          </div></div></div>
+          <div class="hint no-print">Esta ventana es solo Contratos.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+
+  <div id="repSignatureModal" class="signature-modal no-print" aria-hidden="true">
+    <div class="signature-card">
+      <h3>Firma electrónica del representante legal</h3>
+      <p class="hint" id="repSignInfo">Firme en el recuadro amplio. La firma se insertará en el pie de firma del documento.</p>
+      <div class="form-grid">
+        <div class="field col-6">
+          <label>Representante firmante</label>
+          <input id="repSignName" readonly />
+        </div>
+        <div class="field col-6">
+          <label>RUT representante</label>
+          <input id="repSignRut" readonly />
+        </div>
+        <div class="field col-12">
+          <label>Firma dibujada</label>
+          <canvas id="repSignCanvas" class="signature-canvas" width="1200" height="420"></canvas>
+          <div class="hint">Use mouse, touchpad o pantalla táctil. En celular también funciona con el dedo.</div>
+        </div>
+        <div class="field col-12">
+          <label style="display:flex;gap:8px;align-items:flex-start;">
+            <input type="checkbox" id="repSignAccept" style="width:auto;margin-top:4px">
+            <span>Acepto firmar electrónicamente este documento mediante Firma Electrónica Simple (FES), declaro haber revisado su contenido y autorizo que se deje constancia de identificación, fecha/hora y código interno de verificación. Esta firma no corresponde a Firma Electrónica Avanzada.</span>
+          </label>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="btnSaveRepSignature">Guardar firma del representante</button>
+        <button type="button" class="secondary" id="btnClearRepSignature">Borrar firma</button>
+        <button type="button" class="danger" id="btnCancelRepSignature">Cancelar</button>
+        <span id="repSignStatus" class="status"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STATE_KEY="generador_config_v18";
+    let currentMode="home";
+    const q=id=>document.getElementById(id);
+
+    function setMode(mode){
+      currentMode=mode;
+      ["Home","Anexo","Contrato","Config"].forEach(n=>{
+        const key=n.toLowerCase();
+        q("nav"+n)?.classList.toggle("active",key===mode);
+        q("module"+n)?.classList.toggle("active",key===mode);
+      });
+      renderAll();
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+
+    
+    function legalHoursForDate(dateInputId){
+      const raw = q(dateInputId)?.value;
+      const d = raw ? new Date(raw + "T12:00:00") : new Date();
+      const start42 = new Date("2026-04-26T00:00:00");
+      const start40 = new Date("2028-04-26T00:00:00");
+      if(d >= start40) return 40;
+      if(d >= start42) return 42;
+      return 44;
+    }
+
+    function makeJornadaValue(hours, type){
+      if(type==="lv"){
+        if(hours===42){
+          return "42 horas semanales distribuidas de lunes a jueves de 08:00 a 17:30 horas y viernes de 08:00 a 17:00 horas, con una hora de colación diaria no imputable a la jornada.";
+        }
+        return `${hours} horas semanales distribuidas de lunes a viernes, conforme a la programación de turnos de la empresa.`;
+      }
+      if(type==="7x7") return `${hours} horas semanales en promedio, bajo sistema 7x7 (7 días de trabajo por 7 días de descanso), según programación y normativa aplicable.`;
+      if(type==="10x5") return `${hours} horas semanales en promedio, bajo sistema 10x5 (10 días de trabajo por 5 días de descanso), según programación y normativa aplicable.`;
+      return "Jornada y distribución según detalle especial indicado en este anexo.";
+    }
+
+    function refreshJornadaLegalSelect(selectId, hintId, dateInputId, includeOther=false){
+      const sel = q(selectId);
+      if(!sel) return;
+      const current = sel.value || "";
+      const hours = legalHoursForDate(dateInputId);
+      const lvLabel = hours===42 ? "Lunes a Viernes (42 horas: L-J 08:00-17:30 / V 08:00-17:00)" : `Lunes a Viernes (${hours} horas)`;
+      const options = [
+        { value: makeJornadaValue(hours, "lv"), label: lvLabel },
+        { value: makeJornadaValue(hours, "7x7"), label: `7x7 (${hours} horas promedio)` },
+        { value: makeJornadaValue(hours, "10x5"), label: `10x5 (${hours} horas promedio)` },
+      ];
+      if(includeOther) options.push({ value: makeJornadaValue(hours, "other"), label: "Otra / detalle especial" });
+
+      const lower = current.toLowerCase();
+      let selectedIndex = 0;
+      if(lower.includes("7x7")) selectedIndex = 1;
+      else if(lower.includes("10x5")) selectedIndex = 2;
+      else if(lower.includes("detalle especial") || lower.includes("otra")) selectedIndex = includeOther ? 3 : 0;
+
+      sel.innerHTML = "";
+      options.forEach(o=>{
+        const opt = document.createElement("option");
+        opt.value = o.value;
+        opt.textContent = o.label;
+        sel.appendChild(opt);
+      });
+      sel.selectedIndex = selectedIndex;
+      if(hintId && q(hintId)){
+        q(hintId).textContent = `Jornada legal según fecha del documento: ${hours} horas semanales.`;
+        q(hintId).className = "hint ok";
+      }
+    }
+
+    function refreshLegalJornadas(){
+      refreshJornadaLegalSelect("anxJornada", "anxJornadaLegalHint", "fechaAnexo", true);
+      refreshJornadaLegalSelect("jornada", "contratoJornadaLegalHint", "fechaContrato", false);
+
+      if((q("jornada")?.value||"").includes("42 horas") && (q("jornada")?.value||"").toLowerCase().includes("lunes a jueves")){
+        q("horaInicio").value="08:00";
+        q("horaTermino").value="17:30";
+        q("colacionMin").value="60";
+      }
+      if((q("anxJornada")?.value||"").includes("42 horas") && (q("anxJornada")?.value||"").toLowerCase().includes("lunes a jueves")){
+        q("anxHoraInicio").value="08:00";
+        q("anxHoraTermino").value="17:30";
+        q("anxColacion").value="60";
+      }
+    }
+
+
+    function cleanRut(raw){return(raw||"").toString().trim().toUpperCase().replace(/[^0-9K]/g,"")}
+    function computeRutDV(numStr){let sum=0,mul=2;for(let i=numStr.length-1;i>=0;i--){sum+=parseInt(numStr[i],10)*mul;mul=mul===7?2:mul+1}const mod=11-(sum%11);return mod===11?"0":mod===10?"K":String(mod)}
+    function formatRut(raw){const c=cleanRut(raw);if(!c)return"";let body=c,dv="";if(c.length>=2){body=c.slice(0,-1);dv=c.slice(-1)}if(body.length<7)return raw.trim();let out="",count=0;for(let i=body.length-1;i>=0;i--){out=body[i]+out;count++;if(count===3&&i!==0){out="."+out;count=0}}return dv?out+"-"+dv:out}
+    function validateRut(raw){const c=cleanRut(raw);if(!c)return{ok:false,msg:"RUT requerido"};if(c.length<8)return{ok:false,msg:"RUT incompleto"};const body=c.slice(0,-1),dv=c.slice(-1);if(!/^[0-9]+$/.test(body))return{ok:false,msg:"RUT inválido"};const calc=computeRutDV(body);return calc===dv?{ok:true,msg:"RUT válido"}:{ok:false,msg:`DV incorrecto (debería ser ${calc})`}}
+    function setRutHint(el,v){if(!el)return;if(!v){el.textContent="";el.className="hint";return}el.textContent=v.msg;el.className="hint "+(v.ok?"ok":"bad")}
+    function handleRutAutoFormat(inputId,hintId){const el=q(inputId),hint=q(hintId);if(!el)return;const apply=()=>{const raw=el.value.trim();if(!raw){setRutHint(hint,null);return}setRutHint(hint,validateRut(raw))};el.addEventListener("blur",()=>{const f=formatRut(el.value);if(f)el.value=f;apply();renderAll()});el.addEventListener("input",()=>{const c=cleanRut(el.value);if(c.length>=8){const f=formatRut(el.value);if(f&&f!==el.value)el.value=f}apply();renderAll()});apply()}
+
+    function normalizeKey(s){return(s||"").toString().trim().normalize("NFD").replace(/\p{Diacritic}/gu,"").replace(/\s+/g," ").toUpperCase()}
+    const COMPANY_PRESETS={"SOCIEDAD MADERERA GALVEZ Y DI GENOVA LTDA":{rut:"77.110.060-0",email:"maderasgyd@gmail.com",phone:"+56998738274"}};
+    const REP_PRESETS={"PAOLA ANDREA DI GENOVA":"10.518.096-9","RODRIGO AUGUSTO GALVEZ REBOLLEDO":"9.698.140-6"};
+    function applyCompanyPreset(){const p=COMPANY_PRESETS[normalizeKey(q("empresaRaz").value)];if(!p)return;q("rutEmpresa").value=p.rut;q("emailEmp").value=p.email;q("fonoEmp").value=p.phone;q("rutEmpresa").dispatchEvent(new Event("input",{bubbles:true}))}
+    function applyRepPreset(){const rut=REP_PRESETS[normalizeKey(q("rep1Nombre").value)];if(!rut)return;q("rep1Rut").value=rut;q("rep1Rut").dispatchEvent(new Event("input",{bubbles:true}))}
+    function applyRep2Preset(){const rut=REP_PRESETS[normalizeKey(q("rep2Nombre").value)];if(!rut)return;q("rep2Rut").value=rut;q("rep2Rut").dispatchEvent(new Event("input",{bubbles:true}))}
+
+    function setLogo(dataUrl){[q("out_logo_anexo"),q("out_logo_cont")].forEach(img=>{if(!img)return;if(dataUrl){img.src=dataUrl;img.classList.add("show")}else{img.removeAttribute("src");img.classList.remove("show")}})}
+    function clearLogo(){localStorage.removeItem("logo_dataurl_v18");setLogo(null);statusMsg("configStatus","Logo borrado.","ok")}
+    function statusMsg(id,msg,kind=""){const el=q(id);if(!el)return;el.textContent=msg||"";el.className="status"+(kind==="error"?" error":kind==="ok"?" ok":"")}
+    function pad2(n){return String(n).padStart(2,"0")}
+    function dateVal(id){const v=q(id).value;return v?new Date(v+"T12:00:00"):new Date()}
+    function fechaLarga(d){const meses=["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];return`${pad2(d.getDate())} de ${meses[d.getMonth()]} de ${d.getFullYear()}`}
+    function normalizeRoles(raw){return(raw||"").split(/,|\n/).map(s=>s.trim()).filter(Boolean).join(", ")}
+    function normalizeList(raw){return(raw||"").split(/\n/).map(s=>s.trim()).filter(Boolean).join("<br/>")}
+    function setText(id,val){const el=q(id);if(el)el.textContent=(val&&String(val).trim()!=="")?val:"—"}
+    function setHtml(id,val){const el=q(id);if(el)el.innerHTML=(val&&String(val).trim()!=="")?val:"—"}
+    function escapeHtml(s){return(s||"").toString().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+    function horarioComplementarioTexto(jornada, inicio, termino, colacion){
+      const j = (jornada||"").toLowerCase();
+      // Si la jornada ya contiene el detalle L-J/V y la colación, no repetir el horario.
+      if(j.includes("lunes a jueves") && j.includes("viernes") && j.includes("colación")){
+        return "";
+      }
+      return `, considerando hora de inicio referencial <b>${escapeHtml(inicio||"—")}</b>, término referencial <b>${escapeHtml(termino||"—")}</b> y colación de <b>${escapeHtml(colacion||"—")}</b> minutos, no imputable a la jornada`;
+    }
+
+
+    function parseCLPAmount(raw){const s=(raw||"").toString();const m=s.match(/([0-9][0-9\.\s]*)/);if(!m)return null;const n=parseInt(m[1].replace(/\./g,"").replace(/\s/g,""),10);return Number.isFinite(n)?n:null}
+    function unidades(n){return["","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve"][n]||""}
+    function decenas(n){const d=Math.floor(n/10),u=n%10;if(d===0)return unidades(u);if(d===1){if(u===0)return"diez";if(u===1)return"once";if(u===2)return"doce";if(u===3)return"trece";if(u===4)return"catorce";if(u===5)return"quince";return"dieci"+unidades(u)}if(d===2){return u===0?"veinte":"veinti"+unidades(u)}const tens=["","","","treinta","cuarenta","cincuenta","sesenta","setenta","ochenta","noventa"][d];return u===0?tens:tens+" y "+unidades(u)}
+    function centenas(n){if(n===0)return"";if(n<100)return decenas(n);const c=Math.floor(n/100),r=n%100;if(c===1&&r===0)return"cien";const h=["","ciento","doscientos","trescientos","cuatrocientos","quinientos","seiscientos","setecientos","ochocientos","novecientos"][c];return(h+(r?" "+decenas(r):"")).trim()}
+    function seccion(n,div,sing,plur){const qn=Math.floor(n/div),r=n-qn*div;if(qn===0)return["",r];if(qn===1)return[sing,r];return[numeroEnPalabras(qn)+" "+plur,r]}
+    function numeroEnPalabras(n){n=Math.floor(Math.abs(n));if(n===0)return"cero";let words="",rest=n,sec;[sec,rest]=seccion(rest,1000000,"un millon","millones");if(sec)words+=sec+" ";[sec,rest]=seccion(rest,1000,"mil","mil");if(sec)words+=sec+" ";if(rest)words+=centenas(rest);return words.trim().replace(/\s+/g," ").replace(/\buno\b/g,"un")}
+    function clpEnPalabras(raw){const n=parseCLPAmount(raw);return n===null?"":" ("+numeroEnPalabras(n)+" pesos)"}
+    function money(raw){const n=parseCLPAmount(raw);return n===null?(raw||"").toString().trim():"$"+n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".")}
+
+    function company(){return{
+      empresaRaz:q("empresaRaz").value.trim(),
+      rutEmpresa:q("rutEmpresa").value.trim(),
+      domicilioEmp:q("domicilioEmp").value.trim(),
+      comunaEmp:q("comunaEmp").value.trim(),
+      emailEmp:q("emailEmp").value.trim(),
+      fonoEmp:q("fonoEmp").value.trim(),
+      ciudad:q("ciudad").value.trim(),
+      rep1Nombre:q("rep1Nombre").value.trim(),
+      rep1Rut:q("rep1Rut").value.trim(),
+      rep2Nombre:q("rep2Nombre").value.trim(),
+      rep2Rut:q("rep2Rut").value.trim(),
+      repFirma:q("repFirma").value,
+      remoteApiUrl:q("remoteApiUrl").value.trim(),
+      remoteApiKey:q("remoteApiKey").value.trim()
+    }}
+    function activeRep(c){
+      if(c.repFirma==="rep2") return {nombre:c.rep2Nombre, rut:c.rep2Rut};
+      return {nombre:c.rep1Nombre, rut:c.rep1Rut};
+    }
+    function repText(c){const r=activeRep(c);return r.nombre?`${r.nombre}${r.rut?`, Rut ${r.rut}`:""}`:""}
+
+    function getAnexo(){return{fecha:fechaLarga(dateVal("fechaAnexo")),folio:q("folioAnexo").value.trim(),cargoTemplate:q("cargoTemplateAnexo").value,cargo:q("cargoAnexo").value.trim(),predio:q("predio").value.trim(),comuna:q("comunaPredio").value.trim(),roles:normalizeRoles(q("roles").value),nombre:q("trabNombreAnexo").value.trim(),rut:q("trabRutAnexo").value.trim(),cambio:q("anxCambioFaena").checked,horario:q("anxHorario").checked,sueldo:q("anxSueldo").checked,bono:q("anxBonoProduccion").checked,chofer:q("anxChofer").checked,jornada:q("anxJornada").value,detalleHorario:q("anxHorarioDetalle").value.trim(),horaInicio:q("anxHoraInicio").value,horaTermino:q("anxHoraTermino").value,colacion:q("anxColacion").value,nuevoSueldo:q("anxNuevoSueldo").value.trim(),periodicidad:q("anxSueldoPeriodicidad").value,bonoMonto:q("anxBonoMonto").value.trim(),bonoCondicion:q("anxBonoCondicion").value.trim(),vehiculo:q("anxVehiculoTipo").value.trim(),restriccion:q("anxChoferRestriccion").value,emailTrabajador:q("anxEmailTrabajador").value.trim(),fesEnabled:q("anxFesEnabled").checked,fesTrabajador:q("anxFesTrabajador").checked,fesRepresentante:q("anxFesRepresentante").checked}}
+    function buildAnexoClauses(a){const clauses=[];let n=1;const ord=()=>["PRIMERO","SEGUNDO","TERCERO","CUARTO","QUINTO","SEXTO","SEPTIMO","OCTAVO","NOVENO","DECIMO"][n-1]||"CLÁUSULA "+n;
+      if(a.cambio){clauses.push(`<div class="clause"><b>${ord()} (Cambio de faena / lugar de prestación de servicios):</b> A contar del <b>${escapeHtml(a.fecha)}</b>, el trabajador prestará servicios en el predio <b>${escapeHtml(a.predio.toUpperCase())}</b>, rol <b>${escapeHtml(a.roles)}</b>, comuna <b>${escapeHtml(a.comuna.toUpperCase())}</b>, desempeñando la función de <b>${escapeHtml(a.cargo.toUpperCase())}</b>. El cambio se pacta de mutuo acuerdo y no deberá importar menoscabo para el trabajador.</div>`);n++}
+      if(a.horario){const det=a.detalleHorario?` Detalle: <b>${escapeHtml(a.detalleHorario)}</b>.`:"";const extraHorario = horarioComplementarioTexto(a.jornada, a.horaInicio, a.horaTermino, a.colacion);
+        clauses.push(`<div class="clause"><b>${ord()} (Modificación de horario/jornada):</b> A contar del <b>${escapeHtml(a.fecha)}</b>, las partes acuerdan modificar la jornada y/o distribución horaria, quedando en: <b>${escapeHtml(a.jornada)}</b>${extraHorario}.${det}</div>`);n++}
+      if(a.sueldo){clauses.push(`<div class="clause"><b>${ord()} (Modificación de remuneración):</b> A contar del <b>${escapeHtml(a.fecha)}</b>, la remuneración pactada será de <b>${escapeHtml(a.nuevoSueldo)}</b>${escapeHtml(clpEnPalabras(a.nuevoSueldo))}, con periodicidad <b>${escapeHtml(a.periodicidad)}</b>, sin perjuicio de las deducciones legales y demás estipulaciones vigentes que correspondan.</div>`);n++}
+      if(a.bono){const cond=a.bonoCondicion?`, conforme a la siguiente condición o forma de cálculo: <b>${escapeHtml(a.bonoCondicion)}</b>`:"";clauses.push(`<div class="clause"><b>${ord()} (Bono de producción):</b> Las partes acuerdan incorporar un bono de producción por un monto de <b>${escapeHtml(a.bonoMonto)}</b>${escapeHtml(clpEnPalabras(a.bonoMonto))}${cond}. Este bono se pagará solo si se cumplen las condiciones pactadas, y estará sujeto a los descuentos legales que correspondan.</div>`);n++}
+      if(a.chofer){const veh=a.vehiculo||"vehículo de la empresa";clauses.push(`<div class="clause"><b>${ord()} (Chofer de vehículo de la empresa):</b> El trabajador podrá desempeñar labores de conducción de <b>${escapeHtml(veh)}</b> para fines laborales, tales como traslado de personal, herramientas, repuestos, combustible u otros elementos propios de la operación, debiendo cumplir la Ley de Tránsito, instrucciones del empleador, Reglamento Interno, procedimientos de seguridad y uso de EPP cuando corresponda. ${escapeHtml(a.restriccion)}</div>`);n++}
+      if(!clauses.length)clauses.push(`<div class="clause"><b>PRIMERO:</b> Seleccione al menos un tipo de modificación para generar las cláusulas del anexo.</div>`);
+      return clauses.join("\n");
+    }
+
+    function mergeMachinery(selected,otro,libre){const out=[],seen=new Set();const add=s=>{const t=(s||"").toString().trim();if(!t)return;const k=t.toLowerCase();if(seen.has(k))return;seen.add(k);out.push(t)};(selected||[]).forEach(v=>{if(v!=="Otro")add(v)});if((selected||[]).includes("Otro"))add(otro);(libre||"").toString().split(/\n/).forEach(add);return out.join("\n")}
+    function getContrato(){const selected=Array.from(document.querySelectorAll(".machOpt:checked")).map(x=>x.value);return{fecha:fechaLarga(dateVal("fechaContrato")),folio:q("folioContrato").value.trim(),ingreso:fechaLarga(dateVal("fechaIngreso")),nombre:q("trabNombre").value.trim(),rut:q("trabRut").value.trim(),nac:q("trabNac").value.trim(),nacido:q("trabNacido").value?fechaLarga(dateVal("trabNacido")):"—",estado:q("trabEstado").value.trim(),domicilio:q("trabDom").value.trim(),cargo:q("cargoContrato").value.trim(),conduccion:q("incluyeConduccion").checked,mantencion:q("incluyeMantencion").checked,lugar:q("lugarTrabajo").value.trim(),maquinarias:mergeMachinery(selected,q("machOtro").value.trim(),q("maquinarias").value),jornada:q("jornada").value,inicio:q("horaInicio").value,termino:q("horaTermino").value,colacion:q("colacionMin").value,gratificacion:q("gratificacion").value,sueldo:q("sueldo").value.trim(),bonoProduccion:q("bonoProduccion").value.trim(),bonoColacion:q("bonoColacion").value.trim(),bonoMovilizacion:q("bonoMovilizacion").value.trim(),pagoExtra:q("pagoExtra").value.trim(),banco:q("bancoPago").value,tipoCuenta:q("tipoCuenta").value,numeroCuenta:q("numeroCuenta").value.trim(),tipoPago:q("tipoPago").value,diaPago:q("diaPago").value,tipoContrato:q("tipoContrato").value,duracionLibre:q("duracionLibre").value.trim(),salud:q("salud").value,afp:q("afp").value,emailTrabajador:q("ctrEmailTrabajador").value.trim(),fesEnabled:q("ctrFesEnabled").checked,fesTrabajador:q("ctrFesTrabajador").checked,fesRepresentante:q("ctrFesRepresentante").checked}}
+    function buildBonusesText(c){const parts=[];if(parseCLPAmount(c.bonoProduccion)>0)parts.push("Bono producción "+money(c.bonoProduccion));if(parseCLPAmount(c.bonoColacion)>0)parts.push("Bono colación "+money(c.bonoColacion));if(parseCLPAmount(c.bonoMovilizacion)>0)parts.push("Bono movilización "+money(c.bonoMovilizacion));if(c.pagoExtra)parts.push(c.pagoExtra);return parts.length?" Además, "+parts.join(", ")+".":""}
+
+    function toggleAnexoFields(){const a=getAnexo();document.querySelectorAll(".anx-horario").forEach(el=>el.style.display=a.horario?"":"none");document.querySelectorAll(".anx-sueldo").forEach(el=>el.style.display=a.sueldo?"":"none");document.querySelectorAll(".anx-bono").forEach(el=>el.style.display=a.bono?"":"none");document.querySelectorAll(".anx-chofer").forEach(el=>el.style.display=a.chofer?"":"none");const h=q("anxSueldoWordsHint");if(h){const w=clpEnPalabras(a.nuevoSueldo);h.textContent=w?"En palabras: "+w.replace(/^\s*\(/,"").replace(/\)\s*$/,""):"";h.className="hint"+(w?" ok":"")}}
+    function renderAll(){const c=company(),a=getAnexo(),ct=getContrato();
+      const repActivo = activeRep(c);
+      setText("out_rep_firma_anexo", repActivo.nombre);
+      setText("out_rep_firma_cont", repActivo.nombre);
+      setText("out_folio_anexo", a.folio);
+      setText("out_folio_cont", ct.folio);
+      if(q("out_fes_anexo")){
+        q("out_fes_anexo").classList.toggle("doc-hidden", !a.fesEnabled);
+        if(a.fesEnabled) setHtml("out_fes_anexo", buildFesConstancia("ANEXO", a.folio, a.fecha, a.nombre, a.rut, repActivo.nombre, repActivo.rut));
+      }
+      if(q("out_fes_cont")){
+        q("out_fes_cont").classList.toggle("doc-hidden", !ct.fesEnabled);
+        if(ct.fesEnabled) setHtml("out_fes_cont", buildFesConstancia("CONTRATO", ct.folio, ct.fecha, ct.nombre, ct.rut, repActivo.nombre, repActivo.rut));
+      }
+      renderRepSignature("anexo");
+      renderRepSignature("contrato");
+      renderChecklists();
+      setText("out_empresaTitulo_anexo",c.empresaRaz);setText("out_ciudad_anexo",c.ciudad);setText("out_fecha_anexo",a.fecha);setText("out_empresaMayus_anexo",c.empresaRaz.toUpperCase());setText("out_empresaMayus2_anexo",c.empresaRaz.toUpperCase());setText("out_rutEmpresa_anexo",c.rutEmpresa);setText("out_nombre_anexo",a.nombre.toUpperCase());setText("out_nombre2_anexo",a.nombre.toUpperCase());setText("out_rutTrab_anexo",a.rut);setText("out_rutTrab2_anexo",a.rut);setHtml("out_anexo_clauses",buildAnexoClauses(a));toggleAnexoFields();
+      setText("out_ciudad_cont",c.ciudad);setText("out_fecha_cont",ct.fecha);setText("out_empresaRaz2_cont",c.empresaRaz);setText("out_empresaRaz3_cont",c.empresaRaz);setText("out_rutEmpresa_cont",c.rutEmpresa);setText("out_domEmp_cont",c.domicilioEmp);setText("out_comunaEmp_cont",c.comunaEmp);setText("out_rep_cont",repText(c));setText("out_trabNombre_full_cont",ct.nombre);setText("out_trabNombre2_cont",ct.nombre);setText("out_trabRut_cont",ct.rut);setText("out_trabRut2_cont",ct.rut);setText("out_trabNac_cont",ct.nac);setText("out_trabNacido_cont",ct.nacido);setText("out_trabEstado_cont",ct.estado);setText("out_trabDom_cont",ct.domicilio);setText("out_cargo_cont",ct.cargo);setText("out_lugar_cont",ct.lugar);setHtml("out_maquinarias_cont",normalizeList(ct.maquinarias));q("secConduccion").classList.toggle("doc-hidden",!ct.conduccion);q("secMantencion").classList.toggle("doc-hidden",!ct.mantencion);setText("out_jornada_cont",ct.jornada);
+      const compCont = horarioComplementarioTexto(ct.jornada, ct.inicio, ct.termino, ct.colacion);
+      setHtml("out_horario_comp_cont", compCont);
+      setText("out_horaInicio_cont",ct.inicio);setText("out_horaTermino_cont",ct.termino);setText("out_colacion_cont",ct.colacion);setText("out_sueldo_cont",ct.sueldo);setText("out_sueldo_words_cont",clpEnPalabras(ct.sueldo));setText("out_pagosExtra_cont",buildBonusesText(ct));setText("out_gratificacion_cont",ct.gratificacion);setText("out_diaPago_cont",ct.diaPago);setText("out_tipoPago_cont",ct.tipoPago);setText("out_banco_cont",ct.banco);setText("out_tipoCuenta_cont",ct.tipoCuenta);setText("out_numCuenta_cont",ct.numeroCuenta);const tipoFinal=ct.tipoContrato==="__custom__"?(ct.duracionLibre?`Plazo fijo de ${ct.duracionLibre} a partir de la fecha de este contrato.`:"Plazo fijo (duración no definida)."):ct.tipoContrato;setText("out_tipoContrato_cont",tipoFinal);setText("out_salud_cont",ct.salud);setText("out_afp_cont",ct.afp);setText("out_ingreso_cont",ct.ingreso);q("duracionLibreWrap").style.display=ct.tipoContrato==="__custom__"?"block":"none";const sw=q("sueldoWordsHint");if(sw){const w=clpEnPalabras(ct.sueldo);sw.textContent=w?"En palabras: "+w.replace(/^\s*\(/,"").replace(/\)\s*$/,""):"";sw.className="hint"+(w?" ok":"")}
+      updateSignatureButtons();
+    }
+
+    
+    function jornadaMatchesLegalHours(jornadaText, dateInputId){
+      const hours = legalHoursForDate(dateInputId);
+      const txt = (jornadaText||"").toString();
+      // Si es una opción "Otra / detalle especial" en anexo, no bloquear por número si el detalle se escribe libre.
+      if(txt.includes("detalle especial")) return true;
+      return txt.includes(`${hours} horas`);
+    }
+
+    
+    function makeFolio(prefix){
+      const d=new Date();
+      const yyyy=d.getFullYear();
+      const seq=String(Date.now()).slice(-6);
+      return `${prefix}-${yyyy}-${seq}`;
+    }
+
+    function simpleDocCode(text){
+      let h=0x811c9dc5;
+      for(let i=0;i<text.length;i++){
+        h ^= text.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return ("00000000"+(h>>>0).toString(16).toUpperCase()).slice(-8);
+    }
+
+    function buildFesConstancia(tipo, folio, fechaDoc, trabajadorNombre, trabajadorRut, repNombre, repRut){
+      const ts = new Date().toLocaleString("es-CL");
+      const base = `${tipo}|${folio}|${fechaDoc}|${trabajadorNombre}|${trabajadorRut}|${repNombre}|${repRut}|${ts}`;
+      const code = simpleDocCode(base);
+      return `<div class="clause"><b>CONSTANCIA DE FIRMA ELECTRÓNICA SIMPLE (FES):</b> Las partes dejan constancia que este documento fue suscrito mediante Firma Electrónica Simple, de conformidad con la Ley N° 19.799, mediante un proceso electrónico de identificación formal basado en nombre, RUT, selección expresa de aceptación y registro de fecha/hora. Firmante trabajador: <b>${escapeHtml(trabajadorNombre)}</b>, RUT <b>${escapeHtml(trabajadorRut)}</b>. Firmante empleador/representante: <b>${escapeHtml(repNombre)}</b>, RUT <b>${escapeHtml(repRut)}</b>. Fecha y hora de aceptación: <b>${escapeHtml(ts)}</b>. Código interno de verificación: <b>${escapeHtml(code)}</b>. Esta constancia corresponde a firma electrónica simple y no constituye firma electrónica avanzada.</div>`;
+    }
+
+    function renderChecklists(){
+      const c=company(), a=getAnexo(), ct=getContrato();
+      const rep=activeRep(c);
+      const anexoItems=[
+        ["Empresa/RUT", !!c.empresaRaz && validateRut(c.rutEmpresa).ok],
+        ["Representante firmante", !!rep.nombre && !!rep.rut && validateRut(rep.rut).ok],
+        ["Trabajador/RUT", !!a.nombre && validateRut(a.rut).ok],
+        ["Tipo de anexo", a.cambio||a.horario||a.sueldo||a.bono||a.chofer],
+        ["Correo trabajador", !!a.emailTrabajador],
+        ["FES si está activada", !a.fesEnabled || (a.fesTrabajador && a.fesRepresentante)]
+      ];
+      const contratoItems=[
+        ["Empresa/RUT", !!c.empresaRaz && validateRut(c.rutEmpresa).ok],
+        ["Representante firmante", !!rep.nombre && !!rep.rut && validateRut(rep.rut).ok],
+        ["Trabajador/RUT", !!ct.nombre && validateRut(ct.rut).ok],
+        ["Cargo/lugar/maquinaria", !!ct.cargo && !!ct.lugar && !!ct.maquinarias],
+        ["Remuneración", parseCLPAmount(ct.sueldo)!==null],
+        ["Banco/cuenta/tipo pago", !!ct.banco && !!ct.tipoCuenta && !!ct.numeroCuenta && !!ct.tipoPago],
+        ["Correo trabajador", !!ct.emailTrabajador],
+        ["FES si está activada", !ct.fesEnabled || (ct.fesTrabajador && ct.fesRepresentante)]
+      ];
+      const htmlItems = arr => arr.map(([t,ok])=>`${ok?"✅":"⚠️"} ${t}`).join("<br>");
+      if(q("anexoChecklist")) q("anexoChecklist").innerHTML = "<b>Checklist Anexo</b><br>" + htmlItems(anexoItems);
+      if(q("contratoChecklist")) q("contratoChecklist").innerHTML = "<b>Checklist Contrato</b><br>" + htmlItems(contratoItems);
+    }
+
+    function validateCompany(statusId){
+      const c=company();
+      if(!c.empresaRaz||!c.rutEmpresa||!c.ciudad){
+        statusMsg(statusId,"Faltan datos de empresa/ciudad.","error");return false;
+      }
+      const r=validateRut(c.rutEmpresa);
+      if(!r.ok){statusMsg(statusId,"RUT empresa: "+r.msg,"error");return false;}
+
+      const rep=activeRep(c);
+      if(!rep.nombre||!rep.rut){
+        statusMsg(statusId,"Falta el representante legal seleccionado para firmar.","error");return false;
+      }
+      const rr=validateRut(rep.rut);
+      if(!rr.ok){statusMsg(statusId,"RUT representante firmante: "+rr.msg,"error");return false;}
+
+      if((c.rep2Nombre||c.rep2Rut) && (!c.rep2Nombre||!c.rep2Rut)){
+        statusMsg(statusId,"Representante legal 2 incompleto: falta nombre o RUT.","error");return false;
+      }
+      if(c.rep2Rut){
+        const r2=validateRut(c.rep2Rut);
+        if(!r2.ok){statusMsg(statusId,"RUT representante 2: "+r2.msg,"error");return false;}
+      }
+      return true;
+    }
+    function validateAnexo(){if(!validateCompany("anexoStatus"))return false;const a=getAnexo();if(!a.nombre||!a.rut){statusMsg("anexoStatus","Falta trabajador o RUT.","error");return false}const r=validateRut(a.rut);if(!r.ok){statusMsg("anexoStatus","RUT trabajador: "+r.msg,"error");return false}if(!a.cambio&&!a.horario&&!a.sueldo&&!a.bono&&!a.chofer){statusMsg("anexoStatus","Selecciona al menos un tipo de modificación.","error");return false}if(a.cambio&&(!a.cargo||!a.predio||!a.comuna||!a.roles)){statusMsg("anexoStatus","Cambio de faena: faltan cargo/predio/comuna/rol.","error");return false}if(a.horario&&(!a.jornada||!a.horaInicio||!a.horaTermino||!a.colacion)){statusMsg("anexoStatus","Horario: falta jornada/inicio/término/colación.","error");return false}if(a.horario&&!jornadaMatchesLegalHours(a.jornada,"fechaAnexo")){statusMsg("anexoStatus","Horario: la jornada no coincide con el máximo legal vigente para la fecha del anexo.","error");return false}if(a.sueldo&&parseCLPAmount(a.nuevoSueldo)===null){statusMsg("anexoStatus","Sueldo: ingresa monto numérico.","error");return false}if(a.bono&&parseCLPAmount(a.bonoMonto)===null){statusMsg("anexoStatus","Bono producción: ingresa monto numérico.","error");return false}if(a.chofer&&!a.vehiculo){statusMsg("anexoStatus","Chofer: indica tipo de vehículo.","error");return false}if(a.fesEnabled&&(!a.fesTrabajador||!a.fesRepresentante)){statusMsg("anexoStatus","FES: deben aceptar trabajador y representante.","error");return false}statusMsg("anexoStatus","Anexo listo para imprimir.","ok");return true}
+    function validateContrato(){if(!validateCompany("contratoStatus"))return false;const c=getContrato();if(!c.nombre||!c.rut||!c.cargo||!c.lugar||!c.maquinarias||!c.jornada||!c.sueldo){statusMsg("contratoStatus","Faltan datos obligatorios del contrato.","error");return false}const r=validateRut(c.rut);if(!r.ok){statusMsg("contratoStatus","RUT trabajador: "+r.msg,"error");return false}if(parseCLPAmount(c.sueldo)===null){statusMsg("contratoStatus","Remuneración debe tener monto numérico.","error");return false}if(!c.inicio||!c.termino||!c.colacion){statusMsg("contratoStatus","Falta horario o colación.","error");return false}if(!jornadaMatchesLegalHours(c.jornada,"fechaContrato")){statusMsg("contratoStatus","La jornada no coincide con el máximo legal vigente para la fecha del contrato.","error");return false}if(!c.banco||!c.tipoCuenta||!c.numeroCuenta||!c.tipoPago){statusMsg("contratoStatus","Falta banco/cuenta/tipo de pago.","error");return false}if(!/^[0-9]{4,25}$/.test(c.numeroCuenta.replace(/\s/g,""))){statusMsg("contratoStatus","Número de cuenta inválido.","error");return false}if(c.tipoContrato==="__custom__"&&!c.duracionLibre){statusMsg("contratoStatus","Ingresa duración libre.","error");return false}for(const [name,val] of [["Bono producción",c.bonoProduccion],["Bono colación",c.bonoColacion],["Bono movilización",c.bonoMovilizacion]]){if(val&&parseCLPAmount(val)===null){statusMsg("contratoStatus",name+" debe tener monto numérico.","error");return false}}if(c.fesEnabled&&(!c.fesTrabajador||!c.fesRepresentante)){statusMsg("contratoStatus","FES: deben aceptar trabajador y representante.","error");return false}statusMsg("contratoStatus","Contrato listo para imprimir.","ok");return true}
+    
+    
+    let pendingRepSignatureTipo = null;
+    let repSignatureDrawing = false;
+    let repSignatureHasStroke = false;
+
+    function repSignatureKey(tipo){
+      const c=company();
+      const rep=activeRep(c);
+      const folio = tipo==="anexo" ? q("folioAnexo").value.trim() : q("folioContrato").value.trim();
+      return `rep_signature_v27_${tipo}_${folio}_${(rep.rut||"").replace(/[^0-9Kk]/g,"")}`;
+    }
+
+    function getRepSignature(tipo){
+      try{
+        const raw=localStorage.getItem(repSignatureKey(tipo));
+        return raw ? JSON.parse(raw) : null;
+      }catch(e){ return null; }
+    }
+
+    function hasRepElectronicSignature(tipo){
+      const sig=getRepSignature(tipo);
+      return !!(sig && sig.dataUrl && sig.acceptedAt);
+    }
+
+    function buildRepSignatureConstancia(tipo, sig){
+      if(!sig) return "";
+      return `<b>FES representante legal:</b> ${escapeHtml(sig.repName)}, RUT ${escapeHtml(sig.repRut)}, firmó electrónicamente el ${escapeHtml(sig.acceptedAt)}. Código verificación: <b>${escapeHtml(sig.code)}</b>. Firma Electrónica Simple, no avanzada.`;
+    }
+
+    function renderRepSignature(tipo){
+      const sig=getRepSignature(tipo);
+      const img=q(tipo==="anexo" ? "out_rep_signature_anexo" : "out_rep_signature_cont");
+      const note=q(tipo==="anexo" ? "out_rep_fes_anexo" : "out_rep_fes_cont");
+      if(img){
+        if(sig && sig.dataUrl){ img.src=sig.dataUrl; img.classList.remove("doc-hidden"); }
+        else { img.removeAttribute("src"); img.classList.add("doc-hidden"); }
+      }
+      if(note){
+        if(sig){ note.innerHTML=buildRepSignatureConstancia(tipo,sig); note.classList.remove("doc-hidden"); }
+        else { note.innerHTML=""; note.classList.add("doc-hidden"); }
+      }
+    }
+
+    function openRepSignatureModal(tipo){
+      pendingRepSignatureTipo=tipo;
+      const c=company();
+      const rep=activeRep(c);
+      const statusId=tipo==="anexo"?"anexoStatus":"contratoStatus";
+      if(!validateCompany(statusId)) return;
+      q("repSignName").value=rep.nombre||"";
+      q("repSignRut").value=rep.rut||"";
+      q("repSignAccept").checked=false;
+      q("repSignStatus").textContent="";
+      q("repSignStatus").className="status";
+      const canvas=q("repSignCanvas");
+      const ctx=canvas.getContext("2d");
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.lineWidth=3;
+      ctx.lineCap="round";
+      ctx.strokeStyle="#000";
+      repSignatureHasStroke=false;
+      q("repSignatureModal").classList.add("show");
+      q("repSignatureModal").setAttribute("aria-hidden","false");
+    }
+
+    function closeRepSignatureModal(){
+      q("repSignatureModal").classList.remove("show");
+      q("repSignatureModal").setAttribute("aria-hidden","true");
+      pendingRepSignatureTipo=null;
+    }
+
+    function saveRepresentativeSignature(){
+      const tipo=pendingRepSignatureTipo;
+      if(!tipo) return;
+      if(!repSignatureHasStroke){
+        q("repSignStatus").textContent="Debe dibujar la firma del representante.";
+        q("repSignStatus").className="status error";
+        return;
+      }
+      if(!q("repSignAccept").checked){
+        q("repSignStatus").textContent="Debe aceptar la firma electrónica simple.";
+        q("repSignStatus").className="status error";
+        return;
+      }
+      const c=company();
+      const rep=activeRep(c);
+      const doc = tipo==="anexo" ? getAnexo() : getContrato();
+      const dataUrl=q("repSignCanvas").toDataURL("image/png");
+      const acceptedAt=new Date().toLocaleString("es-CL");
+      const code=simpleDocCode(`${tipo}|${doc.folio}|${rep.nombre}|${rep.rut}|${acceptedAt}|${dataUrl.slice(0,60)}`);
+      const sig={dataUrl,acceptedAt,code,repName:rep.nombre,repRut:rep.rut,folio:doc.folio,tipo};
+      localStorage.setItem(repSignatureKey(tipo), JSON.stringify(sig));
+      closeRepSignatureModal();
+      renderAll();
+      statusMsg(tipo==="anexo"?"anexoStatus":"contratoStatus","Representante legal firmó electrónicamente el documento. Ahora puede enviar para firma del trabajador o guardar copia firmada.","ok");
+    }
+
+    function setupRepresentativeSignatureCanvas(){
+      const canvas=q("repSignCanvas");
+      if(!canvas) return;
+      const ctx=canvas.getContext("2d");
+      function pos(e){
+        const r=canvas.getBoundingClientRect();
+        const t=e.touches ? e.touches[0] : e;
+        return {x:(t.clientX-r.left)*(canvas.width/r.width),y:(t.clientY-r.top)*(canvas.height/r.height)};
+      }
+      function start(e){repSignatureDrawing=true;repSignatureHasStroke=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();}
+      function move(e){if(!repSignatureDrawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault();}
+      function end(){repSignatureDrawing=false;}
+      canvas.addEventListener("mousedown",start);
+      canvas.addEventListener("mousemove",move);
+      window.addEventListener("mouseup",end);
+      canvas.addEventListener("touchstart",start,{passive:false});
+      canvas.addEventListener("touchmove",move,{passive:false});
+      canvas.addEventListener("touchend",end);
+      q("btnClearRepSignature").onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height);repSignatureHasStroke=false;};
+      q("btnCancelRepSignature").onclick=closeRepSignatureModal;
+      q("btnSaveRepSignature").onclick=saveRepresentativeSignature;
+    }
+
+    function hasLocalFesAcceptance(tipo){
+      if(tipo==="anexo"){
+        return q("anxFesEnabled")?.checked && q("anxFesTrabajador")?.checked && q("anxFesRepresentante")?.checked;
+      }
+      return q("ctrFesEnabled")?.checked && q("ctrFesTrabajador")?.checked && q("ctrFesRepresentante")?.checked;
+    }
+
+    function updateSignatureButtons(){
+      const anexoSigned = hasRepElectronicSignature("anexo");
+      const contratoSigned = hasRepElectronicSignature("contrato");
+      const anexoLocal = hasLocalFesAcceptance("anexo");
+      const contratoLocal = hasLocalFesAcceptance("contrato");
+      if(q("btnSmartAnexo")) q("btnSmartAnexo").textContent = !anexoSigned ? "Firmar documento" : (anexoLocal ? "Guardar documento firmado" : "Enviar para firma");
+      if(q("btnSmartContrato")) q("btnSmartContrato").textContent = !contratoSigned ? "Firmar documento" : (contratoLocal ? "Guardar documento firmado" : "Enviar para firma");
+    }
+
+    async function smartSignatureAction(tipo){
+      renderAll();
+      if(!hasRepElectronicSignature(tipo)){
+        openRepSignatureModal(tipo);
+        return;
+      }
+      if(hasLocalFesAcceptance(tipo)){
+        printCurrent();
+        return;
+      }
+      await sendRemote(tipo);
+    }
+
+    function printCurrent(){renderAll();if(currentMode==="anexo"){if(!validateAnexo())return}else if(currentMode==="contrato"){if(!validateContrato())return}else{return}window.print()}
+
+    function saveConfig(){const ids=["empresaRaz","rutEmpresa","domicilioEmp","comunaEmp","emailEmp","fonoEmp","ciudad","remoteApiUrl","remoteApiKey","rep1Nombre","rep1Rut","rep2Nombre","rep2Rut","repFirma"];const data={};ids.forEach(id=>data[id]=q(id).value);localStorage.setItem(STATE_KEY,JSON.stringify(data));statusMsg("configStatus","Configuración guardada.","ok")}
+    function loadConfig(){try{const raw=localStorage.getItem(STATE_KEY);if(!raw)return;const data=JSON.parse(raw);Object.keys(data).forEach(id=>{if(q(id))q(id).value=data[id]||""})}catch(e){}}
+    function loadDefaults(){
+      q("empresaRaz").value="Sociedad Maderera Galvez Y DI Génova Ltda";
+      applyCompanyPreset();
+      q("rep1Nombre").value="Paola Andrea Di Génova";
+      applyRepPreset();
+      q("rep2Nombre").value="Rodrigo Augusto Gálvez Rebolledo";
+      applyRep2Preset();
+      q("repFirma").value="rep1";
+      q("domicilioEmp").value="Camino Viejo Las Lumas KM 12 Lote 1";
+      q("comunaEmp").value="Osorno";
+      q("ciudad").value="OSORNO";
+      renderAll();
+      statusMsg("configStatus","Datos base cargados con 2 representantes legales.","ok");
+    }
+    function clearLogo(){localStorage.removeItem("logo_dataurl_v18");setLogo(null);statusMsg("configStatus","Logo borrado.","ok")}
+    function setJornadaDefaults(){const val=(q("jornada").value||"").toLowerCase();if(val.includes("lunes a viernes")){
+        q("horaInicio").value="08:00";
+        q("horaTermino").value="17:30";
+        q("colacionMin").value = val.includes("42 horas") ? "60" : "30";
+      }else if(val.includes("7x7")||val.includes("10x5")){
+        q("horaInicio").value="08:00";
+        q("horaTermino").value="20:00";
+        q("colacionMin").value="60";
+      }
+      renderAll()}
+    function setAnexoJornadaDefaults(){const val=(q("anxJornada").value||"").toLowerCase();if(val.includes("lunes a viernes")){
+        q("anxHoraInicio").value="08:00";
+        q("anxHoraTermino").value="17:30";
+        q("anxColacion").value = val.includes("42 horas") ? "60" : "30";
+      }else if(val.includes("7x7")||val.includes("10x5")){
+        q("anxHoraInicio").value="08:00";
+        q("anxHoraTermino").value="20:00";
+        q("anxColacion").value="60";
+      }
+      renderAll()}
+    function syncMachToTextarea(){const selected=Array.from(document.querySelectorAll(".machOpt:checked")).map(x=>x.value);const base=[];selected.forEach(v=>{if(v!=="Otro")base.push(v)});if(selected.includes("Otro")&&q("machOtro").value.trim())base.push(q("machOtro").value.trim());const ta=q("maquinarias"),existing=ta.value.split(/\n/).map(s=>s.trim()).filter(Boolean),seen=new Set(base.map(x=>x.toLowerCase()));const keep=existing.filter(x=>{const k=x.toLowerCase();if(seen.has(k))return false;seen.add(k);return true});ta.value=[...base,...keep].join("\n")}
+
+    
+    function exportConfig(){
+      const ids=["empresaRaz","rutEmpresa","domicilioEmp","comunaEmp","emailEmp","fonoEmp","ciudad","rep1Nombre","rep1Rut","rep2Nombre","rep2Rut","repFirma"];
+      const data={version:"v23",tipo:"config_generador_contratos_anexos",fecha:new Date().toISOString()};
+      ids.forEach(id=>data[id]=q(id)?.value||"");
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download="configuracion_empresa_generador.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importConfigFile(ev){
+      const file=ev.target.files&&ev.target.files[0]; if(!file) return;
+      const r=new FileReader();
+      r.onload=()=>{
+        try{
+          const data=JSON.parse(r.result);
+          Object.keys(data).forEach(id=>{ if(q(id)) q(id).value=data[id]||""; });
+          saveConfig();
+          renderAll();
+          statusMsg("configStatus","Configuración importada correctamente.","ok");
+        }catch(e){ statusMsg("configStatus","Archivo JSON inválido.","error"); }
+      };
+      r.readAsText(file);
+    }
+
+    const CARGO_TEMPLATES={
+      operador_harvester:{cargo:"Operador de Harvester",maquinas:["Harvester"],conduccion:true,mantencion:true},
+      operador_forwarder:{cargo:"Operador de Forwarder",maquinas:["Forwarder"],conduccion:true,mantencion:true},
+      operador_maquinaria:{cargo:"Operador de maquinaria forestal",maquinas:["Harvester","Forwarder"],conduccion:true,mantencion:true},
+      chofer:{cargo:"Chofer / conductor",maquinas:["Camión","Camión grúa"],conduccion:true,mantencion:false},
+      motosierrista:{cargo:"Motosierrista",maquinas:[],conduccion:false,mantencion:false},
+      administrativo:{cargo:"Administrativo",maquinas:[],conduccion:false,mantencion:false}
+    };
+    function applyCargoTemplate(){
+      const t=CARGO_TEMPLATES[q("cargoTemplate").value]; if(!t) return;
+      q("cargoContrato").value=t.cargo;
+      q("incluyeConduccion").checked=!!t.conduccion;
+      q("incluyeMantencion").checked=!!t.mantencion;
+      document.querySelectorAll(".machOpt").forEach(cb=>cb.checked=t.maquinas.includes(cb.value));
+      syncMachToTextarea();
+      renderAll();
+    }
+
+    function workerStore(){
+      try{return JSON.parse(localStorage.getItem("worker_history_v23")||"[]");}catch(e){return[];}
+    }
+    function saveWorker(){
+      const c=getContrato();
+      if(!c.nombre||!c.rut){statusMsg("contratoStatus","Para guardar trabajador, ingrese nombre y RUT.","error");return;}
+      const list=workerStore().filter(w=>w.rut!==c.rut);
+      list.unshift({nombre:c.nombre,rut:c.rut,nac:c.nac,nacido:q("trabNacido").value,estado:c.estado,domicilio:c.domicilio,cargo:c.cargo,sueldo:c.sueldo,salud:c.salud,afp:c.afp});
+      localStorage.setItem("worker_history_v23",JSON.stringify(list.slice(0,30)));
+      loadWorkerSelect();
+      statusMsg("contratoStatus","Trabajador guardado en historial local.","ok");
+    }
+    function loadWorkerSelect(){
+      const fill=(sel)=>{
+        if(!sel) return;
+        const current=sel.value;
+        sel.innerHTML='<option value="">— Trabajadores guardados —</option>';
+        workerStore().forEach(w=>{
+          const opt=document.createElement("option");
+          opt.value=w.rut; opt.textContent=`${w.nombre} — ${w.rut}`;
+          sel.appendChild(opt);
+        });
+        sel.value=current;
+      };
+      fill(q("workerHistory"));
+      fill(q("workerHistoryAnexo"));
+    }
+    function loadSelectedWorker(){
+      const rut=q("workerHistory").value; if(!rut) return;
+      const w=workerStore().find(x=>x.rut===rut); if(!w) return;
+      q("trabNombre").value=w.nombre||""; q("trabRut").value=w.rut||""; q("trabNac").value=w.nac||"Chilena";
+      q("trabNacido").value=w.nacido||""; q("trabEstado").value=w.estado||""; q("trabDom").value=w.domicilio||"";
+      q("cargoContrato").value=w.cargo||""; q("sueldo").value=w.sueldo||""; q("salud").value=w.salud||"Fonasa"; q("afp").value=w.afp||"";
+      renderAll();
+    }
+
+    
+    function applyCargoTemplateAnexo(){
+      const t=CARGO_TEMPLATES[q("cargoTemplateAnexo").value]; if(!t) return;
+      q("cargoAnexo").value=t.cargo;
+      if(q("anxChofer")) q("anxChofer").checked = q("cargoTemplateAnexo").value==="chofer";
+      renderAll();
+    }
+
+    function saveWorkerAnexo(){
+      const a=getAnexo();
+      if(!a.nombre||!a.rut){statusMsg("anexoStatus","Para guardar trabajador, ingrese nombre y RUT.","error");return;}
+      const list=workerStore().filter(w=>w.rut!==a.rut);
+      list.unshift({nombre:a.nombre,rut:a.rut,cargo:a.cargo,origen:"anexo"});
+      localStorage.setItem("worker_history_v23",JSON.stringify(list.slice(0,30)));
+      loadWorkerSelect();
+      statusMsg("anexoStatus","Trabajador guardado en historial local.","ok");
+    }
+
+    function loadSelectedWorkerAnexo(){
+      const rut=q("workerHistoryAnexo").value; if(!rut) return;
+      const w=workerStore().find(x=>x.rut===rut); if(!w) return;
+      q("trabNombreAnexo").value=w.nombre||"";
+      q("trabRutAnexo").value=w.rut||"";
+      if(w.cargo) q("cargoAnexo").value=w.cargo;
+      renderAll();
+    }
+
+    function prepareEmail(tipo){
+      const c=company();
+      const rep=activeRep(c);
+      const data = tipo==="anexo" ? getAnexo() : getContrato();
+      const email = data.emailTrabajador || "";
+      const folio = data.folio || (tipo==="anexo" ? q("folioAnexo").value : q("folioContrato").value);
+      const docName = tipo==="anexo" ? "Anexo de Contrato" : "Contrato de Trabajo";
+      const subject = `${docName} ${folio} - ${data.nombre||"Trabajador"}`;
+      const body = `Estimado/a ${data.nombre||""}:%0D%0A%0D%0AAdjunto ${docName.toLowerCase()} folio ${folio} para su revisión y firma.%0D%0A%0D%0ARepresentante legal firmante: ${rep.nombre||""}.%0D%0A%0D%0AImportante: este correo fue preparado desde el generador documental. Adjuntar el PDF antes de enviar.%0D%0A%0D%0ASaludos,%0D%0A${c.empresaRaz||""}`;
+      window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${body}`;
+    }
+
+    
+    function getDocumentHtmlForRemote(tipo){
+      const doc = tipo==="anexo" ? q("docAnexo") : q("docContrato");
+      const title = tipo==="anexo" ? "ANEXO CONTRATO DE TRABAJO" : "CONTRATO DE TRABAJO";
+      const css = `@page{size:letter;margin:25.4mm}body{font-family:"Times New Roman",Times,serif;color:#000;background:#fff;margin:0}.page{padding:25.4mm;font-size:12pt;line-height:1.35}.logo{display:block;margin:0 auto 5mm;max-height:20mm;max-width:75mm;object-fit:contain}.topline{text-align:center;font-weight:700;margin-bottom:6mm}.title{text-align:center;font-weight:800;text-transform:uppercase;margin:0 0 6mm}.para,.clause{margin:0 0 5mm;text-align:justify}.sigline{margin-top:12mm;display:grid;grid-template-columns:1fr 1fr;gap:16mm;align-items:start}.sigblock{text-align:center;font-size:11pt}.line{border-top:1px solid #000;margin:0 0 3mm}.doc-folio{text-align:right;font-size:10.5pt;margin-bottom:4mm}.doc-hidden{display:none!important}.remote-audit{border:1px solid #000;padding:8px;margin-top:8mm;font-size:10.5pt}.remote-sign-img{max-width:180px;max-height:70px;display:block;margin:4px auto}`;
+      return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body><div class="page">${doc.outerHTML}</div></body></html>`;
+    }
+    function remotePayload(tipo){
+      const c=company(), rep=activeRep(c), d=tipo==="anexo"?getAnexo():getContrato();
+      return {type:tipo,folio:d.folio,workerName:d.nombre,workerRut:d.rut,workerEmail:d.emailTrabajador,companyName:c.empresaRaz,companyRut:c.rutEmpresa,employerEmail:c.emailEmp,representativeName:rep.nombre,representativeRut:rep.rut,documentTitle:tipo==="anexo"?"Anexo de Contrato":"Contrato de Trabajo",documentHtml:getDocumentHtmlForRemote(tipo),representativeAcceptedAt:new Date().toISOString()};
+    }
+    async function sendRemote(tipo){
+      renderAll(); const statusId=tipo==="anexo"?"anexoStatus":"contratoStatus"; const c=company();
+      if(tipo==="anexo"){if(!validateAnexo())return;} else {if(!validateContrato())return;}
+      const d=tipo==="anexo"?getAnexo():getContrato();
+      if(!d.emailTrabajador){statusMsg(statusId,"Firma remota: falta correo del trabajador.","error");return;}
+      if(!c.remoteApiUrl||!c.remoteApiKey){statusMsg(statusId,"Firma remota: configura URL backend y clave API en Configuración empresa.","error");return;}
+      try{statusMsg(statusId,"Enviando solicitud de firma remota..."); const api=c.remoteApiUrl.replace(/\/+$/,'');
+        const res=await fetch(api+"/api/document-requests",{method:"POST",headers:{"Content-Type":"application/json","X-API-Key":c.remoteApiKey},body:JSON.stringify(remotePayload(tipo))});
+        const data=await res.json().catch(()=>({})); if(!res.ok) throw new Error(data.error||"No se pudo crear la solicitud.");
+        statusMsg(statusId,"Solicitud creada. Link: "+(data.signing_url||""),"ok"); if(data.signing_url) prompt("Link de firma para respaldo/copia:",data.signing_url);
+      }catch(err){statusMsg(statusId,"Error firma remota: "+err.message,"error");}
+    }
+
+    function attach(){q("navHome").onclick=()=>setMode("home");q("navAnexo").onclick=()=>setMode("anexo");q("navContrato").onclick=()=>setMode("contrato");q("navConfig").onclick=()=>setMode("config");q("btnGuardarConfig").onclick=saveConfig;q("btnExportConfig").onclick=exportConfig;q("importConfigFile").addEventListener("change",importConfigFile);q("btnCargarDefaults").onclick=loadDefaults;q("btnBorrarLogo").onclick=clearLogo;q("empresaRaz").addEventListener("change",()=>{applyCompanyPreset();renderAll()});q("rep1Nombre").addEventListener("change",()=>{applyRepPreset();renderAll()});
+      q("rep2Nombre").addEventListener("change",()=>{applyRep2Preset();renderAll()});
+      q("repFirma").addEventListener("change",renderAll);q("jornada").addEventListener("change",setJornadaDefaults);
+      q("fechaAnexo").addEventListener("change",()=>{refreshLegalJornadas();renderAll()});
+      q("fechaContrato").addEventListener("change",()=>{refreshLegalJornadas();renderAll()});q("anxJornada").addEventListener("change",setAnexoJornadaDefaults);q("tipoContrato").addEventListener("change",renderAll);q("cargoTemplate").addEventListener("change",applyCargoTemplate);q("cargoTemplateAnexo").addEventListener("change",applyCargoTemplateAnexo);q("btnSaveWorker").onclick=saveWorker;q("btnLoadWorker").onclick=loadSelectedWorker;q("btnSaveWorkerAnexo").onclick=saveWorkerAnexo;q("btnLoadWorkerAnexo").onclick=loadSelectedWorkerAnexo;q("btnEmailAnexo").onclick=()=>prepareEmail("anexo");q("btnEmailContrato").onclick=()=>prepareEmail("contrato");q("btnSmartAnexo").onclick=()=>smartSignatureAction("anexo");q("btnSmartContrato").onclick=()=>smartSignatureAction("contrato");document.querySelectorAll(".machOpt").forEach(cb=>cb.addEventListener("change",()=>{syncMachToTextarea();renderAll()}));q("machOtro").addEventListener("input",()=>{syncMachToTextarea();renderAll()});const ids=["empresaRaz","rutEmpresa","domicilioEmp","comunaEmp","emailEmp","fonoEmp","ciudad","rep1Nombre","rep1Rut","fechaAnexo","folioAnexo","cargoTemplateAnexo","cargoAnexo","predio","comunaPredio","roles","anxCambioFaena","anxHorario","anxSueldo","anxBonoProduccion","anxChofer","anxJornada","anxHorarioDetalle","anxHoraInicio","anxHoraTermino","anxColacion","anxNuevoSueldo","anxSueldoPeriodicidad","anxBonoMonto","anxBonoCondicion","anxVehiculoTipo","anxChoferRestriccion","trabNombreAnexo","trabRutAnexo","anxEmailTrabajador","anxFesEnabled","anxFesTrabajador","anxFesRepresentante","fechaContrato","fechaIngreso","folioContrato","trabNombre","trabRut","trabNac","trabNacido","trabEstado","trabDom","cargoContrato","incluyeConduccion","incluyeMantencion","lugarTrabajo","maquinarias","jornada","horaInicio","horaTermino","colacionMin","gratificacion","sueldo","bonoProduccion","bonoColacion","bonoMovilizacion","pagoExtra","bancoPago","tipoCuenta","numeroCuenta","tipoPago","diaPago","tipoContrato","duracionLibre","salud","afp","ctrEmailTrabajador","ctrFesEnabled","ctrFesTrabajador","ctrFesRepresentante"];ids.forEach(id=>{const el=q(id);if(!el)return;el.addEventListener("input",renderAll);el.addEventListener("change",renderAll)});q("logoFile").addEventListener("change",ev=>{const file=ev.target.files&&ev.target.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{const dataUrl=r.result;localStorage.setItem("logo_dataurl_v18",dataUrl);setLogo(dataUrl);renderAll();statusMsg("configStatus","Logo cargado.","ok")};r.readAsDataURL(file)});handleRutAutoFormat("rutEmpresa","rutEmpresaHint");handleRutAutoFormat("rep1Rut","rep1RutHint");handleRutAutoFormat("rep2Rut","rep2RutHint");handleRutAutoFormat("trabRutAnexo","trabRutAnexoHint");handleRutAutoFormat("trabRut","trabRutHint");setupRepresentativeSignatureCanvas()}
+    function init(){const now=new Date(),yyyy=now.getFullYear(),mm=String(now.getMonth()+1).padStart(2,"0"),dd=String(now.getDate()).padStart(2,"0");["fechaAnexo","fechaContrato","fechaIngreso"].forEach(id=>q(id).value=`${yyyy}-${mm}-${dd}`);
+      q("folioAnexo").value=makeFolio("ANX");
+      q("folioContrato").value=makeFolio("CTR");
+      attach();loadConfig();if(!q("rutEmpresa").value)loadDefaults();const logo=localStorage.getItem("logo_dataurl_v18");if(logo)setLogo(logo);renderAll()}
+    init();
+  </script>
 </body>
 </html>
