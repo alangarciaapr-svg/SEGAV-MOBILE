@@ -1,7 +1,8 @@
 /* Mobile signature and no-zoom refinements */
 html, body, #root {
   touch-action: pan-x pan-y;
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   user-select: none;
@@ -33,6 +34,8 @@ canvas:active {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: none;
   }
 
   canvas {
