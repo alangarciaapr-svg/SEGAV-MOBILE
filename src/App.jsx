@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { validateRut, formatRut } from './lib/rut.js';
 import { trabajadoresSeed } from './data/trabajadoresSeed.js';
 import { LOGO_DATA_URL } from './assets/logoMaderasGd.js';
@@ -76,11 +76,12 @@ function BottomNav({tabs,tab,setTab}){ return <nav className="lg:hidden bottom-n
 function ContractsAnexos({data}){
   const frameRef=useRef(null);
   const [manualHtml,setManualHtml]=useState('');
-  const trabajadoresActivos=(data.trabajadores||[]).filter(w=>w.estado==='Activo');
+  const trabajadoresActivos=useMemo(() => (data.trabajadores||[]).filter(w=>w.estado==='Activo'), [data.trabajadores]);
   const generatorSrc='/contratos-anexos.html';
   function loadStatic(){ setManualHtml(''); }
   async function loadManual(event){ const file=event.target.files?.[0]; if(!file) return; setManualHtml(await file.text()); event.target.value=''; }
   function sendSegavContext(){ frameRef.current?.contentWindow?.postMessage({source:'SEGAV-SST',type:'SEGAV_WORKERS_CONTEXT',empresa,trabajadores:trabajadoresActivos}, window.location.origin); }
+  useEffect(() => { sendSegavContext(); }, [trabajadoresActivos]);
   return <div className="space-y-5 contracts-native-module"><div className="grid gap-4 md:grid-cols-3"><Card><p className="text-xs font-bold uppercase text-slate-500">Generador laboral</p><p className="mt-2 text-3xl font-black">Activo</p><p className="mt-2 text-sm text-slate-500">Integrado como módulo nativo de SEGAV SST.</p></Card><Card><p className="text-xs font-bold uppercase text-slate-500">Trabajadores SEGAV</p><p className="mt-2 text-3xl font-black">{trabajadoresActivos.length}</p><p className="mt-2 text-sm text-slate-500">Contexto preparado para autocompletar en una etapa posterior.</p></Card><Card><p className="text-xs font-bold uppercase text-slate-500">Documento base</p><p className="mt-2 text-3xl font-black">v29</p><p className="mt-2 text-sm text-slate-500">Se carga fijo desde /contratos-anexos.html.</p></Card></div><Card><div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'center',flexWrap:'wrap'}}><div><p className="text-xs font-bold uppercase tracking-widest text-teal-700">Contratos y Anexos</p><h2 className="text-2xl font-black">Generador integrado</h2><p className="text-sm text-slate-500">Inicio, Crear Anexo, Crear Contrato, Configuración empresa, firma y PDF sin salir de SEGAV.</p></div><div style={{display:'flex',gap:8,flexWrap:'wrap'}}><Btn onClick={loadStatic}>Usar versión fija</Btn><Btn secondary onClick={()=>frameRef.current?.contentWindow?.location.reload()}>Recargar</Btn><a className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-900" href={generatorSrc} target="_blank" rel="noreferrer">Abrir aparte</a><label className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-900" style={{cursor:'pointer'}}>Cargar HTML respaldo<input type="file" accept="text/html,.html" onChange={loadManual} style={{display:'none'}} /></label></div></div></Card><section className="contracts-frame-shell rounded-3xl border border-slate-200 bg-white p-2 shadow-sm app-card"><iframe ref={frameRef} title="Generador de contratos y anexos" src={manualHtml?'about:blank':generatorSrc} srcDoc={manualHtml || undefined} onLoad={sendSegavContext} style={{width:'100%',height:'100%',border:0,borderRadius:22,background:'#0b1220'}} /></section></div>;
 }
 

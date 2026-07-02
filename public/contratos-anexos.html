@@ -366,13 +366,13 @@
             </div>
 
             <div class="field col-12">
-              <label for="workerHistoryAnexo">Historial local de trabajadores</label>
+              <label for="workerHistoryAnexo">Trabajadores SEGAV / historial local</label>
               <div class="fes-row">
                 <select id="workerHistoryAnexo" style="flex:1;min-width:220px;"><option value="">— Trabajadores guardados —</option></select>
                 <button type="button" class="secondary" id="btnLoadWorkerAnexo">Cargar trabajador</button>
                 <button type="button" class="secondary" id="btnSaveWorkerAnexo">Guardar trabajador</button>
               </div>
-              <div class="hint">Disponible también para anexos. Se guarda solo en este navegador.</div>
+              <div class="hint">Incluye trabajadores activos de SEGAV cuando se usa dentro de la app. También mantiene historial local de respaldo.</div>
             </div>
           </div>
 
@@ -479,13 +479,13 @@
             <div class="field col-8"><label for="trabNombre">Nombre trabajador</label><input id="trabNombre" placeholder="NOMBRE COMPLETO" /></div>
             <div class="field col-4"><label for="trabRut">RUT trabajador</label><input id="trabRut" placeholder="12.345.678-5" inputmode="text" autocomplete="off" /><div class="hint" id="trabRutHint"></div></div>
             <div class="field col-12">
-              <label for="workerHistory">Historial local de trabajadores</label>
+              <label for="workerHistory">Trabajadores SEGAV / historial local</label>
               <div class="fes-row">
                 <select id="workerHistory" style="flex:1;min-width:220px;"><option value="">— Trabajadores guardados —</option></select>
                 <button type="button" class="secondary" id="btnLoadWorker">Cargar trabajador</button>
                 <button type="button" class="secondary" id="btnSaveWorker">Guardar trabajador</button>
               </div>
-              <div class="hint">Se guarda solo en este navegador: nombre, RUT, domicilio, salud, AFP, cargo y sueldo.</div>
+              <div class="hint">Incluye trabajadores activos de SEGAV cuando se usa dentro de la app. También mantiene historial local de respaldo.</div>
             </div>
             <div class="field col-4"><label for="trabNac">Nacionalidad</label><input id="trabNac" value="Chilena" /></div>
             <div class="field col-4"><label for="trabNacido">Fecha nacimiento</label><input id="trabNacido" type="date" /></div>
@@ -1224,8 +1224,49 @@
       renderAll();
     }
 
+    let SEGAV_WORKERS=[];
+    function cleanRut(value){return String(value||"").replace(/\./g,"").replace(/-/g,"").trim().toUpperCase();}
+    function normalizeSegavWorker(w){
+      return {
+        origen:"segav",
+        id:w.id||"",
+        nombre:w.nombre||"",
+        rut:w.rut||"",
+        cargo:w.cargo||"",
+        email:w.email||"",
+        ingreso:w.ingreso||"",
+        area:w.area||"",
+        centro:w.centro||"",
+        estado:w.estado||""
+      };
+    }
     function workerStore(){
       try{return JSON.parse(localStorage.getItem("worker_history_v23")||"[]");}catch(e){return[];}
+    }
+    function mergedWorkerStore(){
+      const merged=[];
+      const seen=new Set();
+      SEGAV_WORKERS.map(normalizeSegavWorker).forEach(w=>{
+        const key=cleanRut(w.rut);
+        if(!key||seen.has(key))return;
+        seen.add(key);
+        merged.push(w);
+      });
+      workerStore().forEach(w=>{
+        const key=cleanRut(w.rut);
+        if(!key||seen.has(key))return;
+        seen.add(key);
+        merged.push({...w,origen:w.origen||"local"});
+      });
+      return merged;
+    }
+    function findWorkerByRut(rut){
+      const key=cleanRut(rut);
+      return mergedWorkerStore().find(w=>cleanRut(w.rut)===key);
+    }
+    function updateSegavWorkers(list){
+      SEGAV_WORKERS=Array.isArray(list)?list:[];
+      loadWorkerSelect();
     }
     function saveWorker(){
       const c=getContrato();
@@ -1241,9 +1282,9 @@
         if(!sel) return;
         const current=sel.value;
         sel.innerHTML='<option value="">— Trabajadores guardados —</option>';
-        workerStore().forEach(w=>{
+        mergedWorkerStore().forEach(w=>{
           const opt=document.createElement("option");
-          opt.value=w.rut; opt.textContent=`${w.nombre} — ${w.rut}`;
+          opt.value=w.rut; opt.textContent=`${w.origen==="segav"?"SEGAV · ":""}${w.nombre} — ${w.rut}`;
           sel.appendChild(opt);
         });
         sel.value=current;
@@ -1253,10 +1294,12 @@
     }
     function loadSelectedWorker(){
       const rut=q("workerHistory").value; if(!rut) return;
-      const w=workerStore().find(x=>x.rut===rut); if(!w) return;
+      const w=findWorkerByRut(rut); if(!w) return;
       q("trabNombre").value=w.nombre||""; q("trabRut").value=w.rut||""; q("trabNac").value=w.nac||"Chilena";
       q("trabNacido").value=w.nacido||""; q("trabEstado").value=w.estado||""; q("trabDom").value=w.domicilio||"";
       q("cargoContrato").value=w.cargo||""; q("sueldo").value=w.sueldo||""; q("salud").value=w.salud||"Fonasa"; q("afp").value=w.afp||"";
+      if(w.email) q("ctrEmailTrabajador").value=w.email;
+      if(w.ingreso) q("fechaIngreso").value=w.ingreso;
       renderAll();
     }
 
@@ -1280,12 +1323,20 @@
 
     function loadSelectedWorkerAnexo(){
       const rut=q("workerHistoryAnexo").value; if(!rut) return;
-      const w=workerStore().find(x=>x.rut===rut); if(!w) return;
+      const w=findWorkerByRut(rut); if(!w) return;
       q("trabNombreAnexo").value=w.nombre||"";
       q("trabRutAnexo").value=w.rut||"";
       if(w.cargo) q("cargoAnexo").value=w.cargo;
+      if(w.email) q("anxEmailTrabajador").value=w.email;
       renderAll();
     }
+
+    window.addEventListener("message",(event)=>{
+      if(event.origin && event.origin!==location.origin)return;
+      const data=event.data||{};
+      if(data.source!=="SEGAV-SST"||data.type!=="SEGAV_WORKERS_CONTEXT")return;
+      updateSegavWorkers(data.trabajadores||[]);
+    });
 
     function prepareEmail(tipo){
       const c=company();
