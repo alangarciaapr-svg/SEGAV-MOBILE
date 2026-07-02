@@ -40,6 +40,28 @@ function installMobileZoomLock() {
 
 installMobileZoomLock();
 
+function installServiceWorkerUpdateGuard() {
+  if (!('serviceWorker' in navigator)) return;
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      await registration.update();
+    } catch (error) {
+      console.warn('No se pudo actualizar el service worker', error);
+    }
+  });
+}
+
+installServiceWorkerUpdateGuard();
+
 createRoot(root).render(
   <React.StrictMode>
     <App />
